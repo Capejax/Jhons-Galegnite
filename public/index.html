@@ -208,10 +208,12 @@
   @keyframes dmgFlash{ 0%{ opacity:1; background:radial-gradient(circle, rgba(255,20,20,0.05) 30%, rgba(255,20,20,0.55) 100%);} 100%{ opacity:0; } }
 
   #bottomLeft{ position:absolute; left:18px; bottom:18px; width:260px; }
-  .barLabel{ font-size:0.7rem; letter-spacing:2px; color:#9fd; margin-bottom:3px; display:flex; justify-content:space-between; }
-  .barOuter{ width:100%; height:16px; background:rgba(255,255,255,0.08); border:1px solid rgba(0,255,242,0.35); border-radius:2px; overflow:hidden; margin-bottom:10px; }
+  .barLabel{ font-size:0.68rem; letter-spacing:1.5px; color:#9fd; margin-bottom:2px; display:flex; justify-content:space-between; }
+  .barOuter{ width:100%; height:12px; background:rgba(255,255,255,0.08); border:1px solid rgba(0,255,242,0.35); border-radius:2px; overflow:hidden; margin-bottom:7px; }
   .barInner{ height:100%; width:100%; background:var(--cyan); box-shadow:0 0 10px var(--cyan); transition:width .15s ease, background .2s ease; }
   #grappleBarInner{ background:var(--violet); box-shadow:0 0 10px var(--violet); }
+  #grenadeBarInner{ background:#ff7a00; box-shadow:0 0 10px #ff7a00; }
+  #dashBarInner{ background:#39ff14; box-shadow:0 0 10px #39ff14; }
 
   #topRight{ position:absolute; right:18px; top:16px; text-align:right; }
   #scoreboard{ font-size:0.95rem; letter-spacing:2px; color:#eafcff; }
@@ -509,8 +511,10 @@
         <div><b>SHIFT</b> — sprint &nbsp; <b>C</b> — slide while sprinting</div>
         <div><b>Run at a wall + jump</b> — wall-run automatically, <b>SPACE</b> to wall-jump</div>
         <div><b>E</b> (hold) — fire grappling hook, pulls you to the point</div>
+        <div><b>G</b> — throw a grenade (timed fuse, arcs with gravity)</div>
+        <div><b>Q</b> — dash burst in your current move direction</div>
         <div><b>LEFT CLICK</b> — fire/swing &nbsp; <b>RIGHT CLICK</b> (hold) — aim down sights</div>
-        <div><b>1-7</b> — switch gun &nbsp; <b>8</b> — sword</div>
+        <div><b>1-7</b> — switch gun &nbsp; <b>8</b> — sword &nbsp; <b>9</b> — RPG</div>
         <div><b>B</b> — loadout menu &nbsp; <b>TAB</b> (hold) — full arena roster</div>
         <div><b>ESC</b> — pause, with an option to leave to the main menu</div>
         <div>Get a kill to heal +25 HP. Taller towers make good sniper nests.</div>
@@ -557,8 +561,12 @@
   <div id="bottomLeft">
     <div class="barLabel"><span>HULL</span><span id="hpText">100</span></div>
     <div class="barOuter"><div class="barInner" id="healthFill"></div></div>
-    <div class="barLabel"><span>GRAPPLE</span><span id="grappleText">READY</span></div>
+    <div class="barLabel"><span>GRAPPLE (E)</span><span id="grappleText">READY</span></div>
     <div class="barOuter"><div class="barInner" id="grappleBarInner"></div></div>
+    <div class="barLabel"><span>GRENADE (G)</span><span id="grenadeText">READY</span></div>
+    <div class="barOuter"><div class="barInner" id="grenadeBarInner"></div></div>
+    <div class="barLabel"><span>DASH (Q)</span><span id="dashText">READY</span></div>
+    <div class="barOuter"><div class="barInner" id="dashBarInner"></div></div>
   </div>
 
   <div id="topRight">
@@ -697,65 +705,65 @@ function clearMapGeometry(){
 
 /* ---- MAP: NEON ARENA — symmetric open arena, central pit + tall sniper tower ---- */
 function buildArenaMap(){
-  // floor slabs surrounding a central pit (pit spans x/z -10..10)
-  addBlock(0, -0.5, 25,  80, 1, 30, COL.floor, COL.floorEdge);   // north
-  addBlock(0, -0.5, -25, 80, 1, 30, COL.floor, COL.floorEdge);   // south
-  addBlock(25, -0.5, 0,  30, 1, 20, COL.floor, COL.floorEdge);   // east
-  addBlock(-25,-0.5, 0,  30, 1, 20, COL.floor, COL.floorEdge);   // west
+  // floor slabs surrounding a central pit (pit spans x/z -13..13)
+  addBlock(0, -0.5, 32.5,  104, 1, 39, COL.floor, COL.floorEdge);   // north
+  addBlock(0, -0.5, -32.5, 104, 1, 39, COL.floor, COL.floorEdge);   // south
+  addBlock(32.5, -0.5, 0,  39, 1, 26, COL.floor, COL.floorEdge);   // east
+  addBlock(-32.5,-0.5, 0,  39, 1, 26, COL.floor, COL.floorEdge);   // west
 
-  // perimeter walls (wall-run surfaces)
-  addBlock(0, 6, 40.5, 82, 14, 1, COL.wall, COL.wallEdge);
-  addBlock(0, 6, -40.5,82, 14, 1, COL.wall, COL.wallEdge);
-  addBlock(40.5, 6, 0, 1, 14, 82, COL.wall, COL.wallEdge);
-  addBlock(-40.5,6, 0, 1, 14, 82, COL.wall, COL.wallEdge);
+  // perimeter walls (wall-run surfaces) — taller
+  addBlock(0, 9, 52.5, 106, 20, 1, COL.wall, COL.wallEdge);
+  addBlock(0, 9, -52.5,106, 20, 1, COL.wall, COL.wallEdge);
+  addBlock(52.5, 9, 0, 1, 20, 106, COL.wall, COL.wallEdge);
+  addBlock(-52.5,9, 0, 1, 20, 106, COL.wall, COL.wallEdge);
 
-  // pit walls (danger drop, also wall-runnable edges)
-  addBlock(10.5, -7, 0, 1, 15, 20.5, COL.pit, COL.pitEdge);
-  addBlock(-10.5,-7, 0, 1, 15, 20.5, COL.pit, COL.pitEdge);
-  addBlock(0, -7, 10.5, 20.5, 15, 1, COL.pit, COL.pitEdge);
-  addBlock(0, -7, -10.5,20.5, 15, 1, COL.pit, COL.pitEdge);
+  // pit walls (danger drop, also wall-runnable edges) — deeper
+  addBlock(13.5, -8, 0, 1, 18, 26.5, COL.pit, COL.pitEdge);
+  addBlock(-13.5,-8, 0, 1, 18, 26.5, COL.pit, COL.pitEdge);
+  addBlock(0, -8, 13.5, 26.5, 18, 1, COL.pit, COL.pitEdge);
+  addBlock(0, -8, -13.5,26.5, 18, 1, COL.pit, COL.pitEdge);
 
   // stepping platforms across the pit
-  addBlock(-5.5, 1, -5.5, 4.5, 1, 4.5, COL.plat, COL.platEdge);
-  addBlock(5.5, 1, 5.5, 4.5, 1, 4.5, COL.plat, COL.platEdge);
-  // central tower (tall sniping perch)
-  addBlock(0, 3, 0, 4.5, 1, 4.5, COL.tower, COL.towerEdge);
-  addBlock(0, 14.5, 0, 2, 23, 2, COL.tower, COL.towerEdge);
-  addBlock(0, 26, 0, 3.2, 1, 3.2, COL.plat, COL.platEdge);
+  addBlock(-7, 1, -7, 5, 1, 5, COL.plat, COL.platEdge);
+  addBlock(7, 1, 7, 5, 1, 5, COL.plat, COL.platEdge);
+  // central tower — much taller sniping perch
+  addBlock(0, 3, 0, 5, 1, 5, COL.tower, COL.towerEdge);
+  addBlock(0, 20.5, 0, 2.4, 34, 2.4, COL.tower, COL.towerEdge);
+  addBlock(0, 38, 0, 3.6, 1, 3.6, COL.plat, COL.platEdge);
 
-  // cover pillars
-  [[20,4,20],[-20,4,20],[20,4,-20],[-20,4,-20],[0,4,30],[0,4,-30],[30,4,0],[-30,4,0]]
-    .forEach(p=> addBlock(p[0],p[1],p[2], 3,8,3, COL.cover, COL.coverEdge));
+  // cover pillars — taller
+  [[26,5,26],[-26,5,26],[26,5,-26],[-26,5,-26],[0,5,39],[0,5,-39],[39,5,0],[-39,5,0]]
+    .forEach(p=> addBlock(p[0],p[1],p[2], 3,10,3, COL.cover, COL.coverEdge));
 
-  // extra sniper-nest towers with platforms
-  addBlock(15, 10, -15, 3, 20, 3, COL.tower, COL.towerEdge);
-  addBlock(15, 20.5, -15, 4, 1, 4, COL.plat, COL.platEdge);
-  addBlock(-15, 10, 15, 3, 20, 3, COL.tower, COL.towerEdge);
-  addBlock(-15, 20.5, 15, 4, 1, 4, COL.plat, COL.platEdge);
+  // extra sniper-nest towers with platforms — taller
+  addBlock(19.5, 13, -19.5, 3, 26, 3, COL.tower, COL.towerEdge);
+  addBlock(19.5, 26.5, -19.5, 4, 1, 4, COL.plat, COL.platEdge);
+  addBlock(-19.5, 13, 19.5, 3, 26, 3, COL.tower, COL.towerEdge);
+  addBlock(-19.5, 26.5, 19.5, 4, 1, 4, COL.plat, COL.platEdge);
 
   // raised corner platforms
-  addBlock(30,6,-30, 8,1,8, COL.plat, COL.platEdge);
-  addBlock(-30,6,30, 8,1,8, COL.plat, COL.platEdge);
+  addBlock(39,7,-39, 9,1,9, COL.plat, COL.platEdge);
+  addBlock(-39,7,39, 9,1,9, COL.plat, COL.platEdge);
 
   // extra scattered cover obstacles
-  addBlock(12, 1.5, 4, 3, 3, 3, COL.cover, COL.coverEdge);
-  addBlock(-12, 1.5, -4, 3, 3, 3, COL.cover, COL.coverEdge);
-  addBlock(4, 1.5, -12, 3, 3, 3, COL.cover, COL.coverEdge);
-  addBlock(-4, 1.5, 12, 3, 3, 3, COL.cover, COL.coverEdge);
-  addBlock(0, 1.5, -20, 5, 3, 2, COL.cover, COL.coverEdge);
-  addBlock(0, 1.5, 20, 5, 3, 2, COL.cover, COL.coverEdge);
+  addBlock(15.5, 1.5, 5, 3, 3, 3, COL.cover, COL.coverEdge);
+  addBlock(-15.5, 1.5, -5, 3, 3, 3, COL.cover, COL.coverEdge);
+  addBlock(5, 1.5, -15.5, 3, 3, 3, COL.cover, COL.coverEdge);
+  addBlock(-5, 1.5, 15.5, 3, 3, 3, COL.cover, COL.coverEdge);
+  addBlock(0, 1.5, -26, 6, 3, 2.4, COL.cover, COL.coverEdge);
+  addBlock(0, 1.5, 26, 6, 3, 2.4, COL.cover, COL.coverEdge);
 
-  addGridFloor(80, 40, 0x1c3d55);
+  addGridFloor(104, 42, 0x1c3d55);
 
   return {
-    playerSpawns: [ new THREE.Vector3(0,1,-35), new THREE.Vector3(0,1,35), new THREE.Vector3(35,1,0), new THREE.Vector3(-35,1,0) ],
-    botSpawns: [ new THREE.Vector3(25,1,0), new THREE.Vector3(-25,1,0), new THREE.Vector3(0,1,25), new THREE.Vector3(0,1,-25), new THREE.Vector3(30,6.6,-30), new THREE.Vector3(-30,6.6,30) ],
+    playerSpawns: [ new THREE.Vector3(0,1,-46), new THREE.Vector3(0,1,46), new THREE.Vector3(46,1,0), new THREE.Vector3(-46,1,0) ],
+    botSpawns: [ new THREE.Vector3(32,1,0), new THREE.Vector3(-32,1,0), new THREE.Vector3(0,1,32), new THREE.Vector3(0,1,-32), new THREE.Vector3(39,8.6,-39), new THREE.Vector3(-39,8.6,39) ],
     wanderPool: [
-      new THREE.Vector3(20,0,20), new THREE.Vector3(-20,0,20), new THREE.Vector3(20,0,-20), new THREE.Vector3(-20,0,-20),
-      new THREE.Vector3(0,0,32), new THREE.Vector3(0,0,-32), new THREE.Vector3(32,0,0), new THREE.Vector3(-32,0,0),
-      new THREE.Vector3(15,0,0), new THREE.Vector3(-15,0,0), new THREE.Vector3(0,0,15), new THREE.Vector3(0,0,-15)
+      new THREE.Vector3(26,0,26), new THREE.Vector3(-26,0,26), new THREE.Vector3(26,0,-26), new THREE.Vector3(-26,0,-26),
+      new THREE.Vector3(0,0,42), new THREE.Vector3(0,0,-42), new THREE.Vector3(42,0,0), new THREE.Vector3(-42,0,0),
+      new THREE.Vector3(19,0,0), new THREE.Vector3(-19,0,0), new THREE.Vector3(0,0,19), new THREE.Vector3(0,0,-19)
     ],
-    pickupSpecs: [[20,8.9,20],[-20,8.9,-20],[0,14.9,0],[30,7.9,-30],[-30,7.9,30]]
+    pickupSpecs: [[26,8.9,26],[-26,8.9,-26],[0,20.9,0],[39,8.9,-39],[-39,8.9,39]]
   };
 }
 
@@ -763,57 +771,64 @@ function buildArenaMap(){
 function buildSkybridgeMap(){
   const C = COL_SKY;
 
-  // open ground floor, no pit
-  addBlock(0, -0.5, 0, 70, 1, 70, C.floor, C.floorEdge);
+  // open ground floor, no pit — bigger footprint
+  addBlock(0, -0.5, 0, 92, 1, 92, C.floor, C.floorEdge);
 
   // perimeter walls (tall, wall-run surfaces)
-  addBlock(0, 8, 35.5, 70, 16, 1, C.wall, C.wallEdge);
-  addBlock(0, 8, -35.5,70, 16, 1, C.wall, C.wallEdge);
-  addBlock(35.5, 8, 0, 1, 16, 70, C.wall, C.wallEdge);
-  addBlock(-35.5,8, 0, 1, 16, 70, C.wall, C.wallEdge);
+  addBlock(0, 10, 47, 92, 22, 1, C.wall, C.wallEdge);
+  addBlock(0, 10, -47,92, 22, 1, C.wall, C.wallEdge);
+  addBlock(47, 10, 0, 1, 22, 92, C.wall, C.wallEdge);
+  addBlock(-47,10, 0, 1, 22, 92, C.wall, C.wallEdge);
 
   // stepping stones up to the first ring
   addBlock(0, 0.8, -6,  3, 1.6, 3, C.plat, C.platEdge);
   addBlock(0, 2.4, -3,  3, 1.6, 3, C.plat, C.platEdge);
   addBlock(0, 4.0, 0,   3, 1.6, 3, C.plat, C.platEdge);
   // first ring platform
-  addBlock(0, 5.6, 4, 20, 1.6, 12, C.tower, C.towerEdge);
+  addBlock(0, 5.6, 4, 24, 1.6, 14, C.tower, C.towerEdge);
 
   // stepping stones up to the second ring, offset to a different approach
   addBlock(2, 7.2, 4,  3, 1.6, 3, C.plat, C.platEdge);
   addBlock(2, 8.8, 7,  3, 1.6, 3, C.plat, C.platEdge);
   addBlock(2, 10.4,10, 3, 1.6, 3, C.plat, C.platEdge);
   // second ring platform
-  addBlock(0, 12.0, 12, 12, 1.6, 8, C.tower, C.towerEdge);
+  addBlock(0, 12.0, 12, 14, 1.6, 10, C.tower, C.towerEdge);
+
+  // stepping stones up to a third ring, offset again — the tower keeps climbing
+  addBlock(-2, 13.6, 15, 3, 1.6, 3, C.plat, C.platEdge);
+  addBlock(-2, 15.2, 18, 3, 1.6, 3, C.plat, C.platEdge);
+  addBlock(-2, 16.8, 21, 3, 1.6, 3, C.plat, C.platEdge);
+  // third ring platform
+  addBlock(0, 18.4, 24, 10, 1.6, 8, C.tower, C.towerEdge);
 
   // final stair to the crown
-  addBlock(0, 13.6, 15, 2.4, 1.6, 2.4, C.plat, C.platEdge);
-  addBlock(0, 15.2, 16.5, 2.4, 1.6, 2.4, C.plat, C.platEdge);
-  addBlock(0, 16.8, 17.5, 6, 1.6, 6, C.tower, C.towerEdge); // crown sniper perch
+  addBlock(0, 20.0, 27, 2.4, 1.6, 2.4, C.plat, C.platEdge);
+  addBlock(0, 21.6, 29, 2.4, 1.6, 2.4, C.plat, C.platEdge);
+  addBlock(0, 23.2, 31, 6, 1.6, 6, C.tower, C.towerEdge); // crown sniper perch, well above the old tower
 
   // two flanking bridges off the first ring, crossing back down toward the side walls
-  addBlock(-14, 5.6, 4, 16, 1.2, 2.4, C.plat, C.platEdge);
-  addBlock(14, 5.6, 4,  16, 1.2, 2.4, C.plat, C.platEdge);
-  addBlock(-28, 4.4, 4, 8, 1, 8, C.plat, C.platEdge);  // west landing platform
-  addBlock(28, 4.4, 4,  8, 1, 8, C.plat, C.platEdge);  // east landing platform
+  addBlock(-17, 5.6, 4, 20, 1.2, 2.4, C.plat, C.platEdge);
+  addBlock(17, 5.6, 4,  20, 1.2, 2.4, C.plat, C.platEdge);
+  addBlock(-37, 4.4, 4, 9, 1, 9, C.plat, C.platEdge);  // west landing platform
+  addBlock(37, 4.4, 4,  9, 1, 9, C.plat, C.platEdge);  // east landing platform
 
   // ground-level cover
-  [[16,3,-20],[-16,3,-20],[16,3,20],[-16,3,20],[-24,3,-24],[24,3,-24]]
-    .forEach(p=> addBlock(p[0],p[1],p[2], 3,6,3, C.cover, C.coverEdge));
-  addBlock(0, 1.5, -24, 8, 3, 2, C.cover, C.coverEdge);
-  addBlock(0, 1.5, 24, 8, 3, 2, C.cover, C.coverEdge);
+  [[21,3.5,-26],[-21,3.5,-26],[21,3.5,26],[-21,3.5,26],[-31,3.5,-31],[31,3.5,-31]]
+    .forEach(p=> addBlock(p[0],p[1],p[2], 3,7,3, C.cover, C.coverEdge));
+  addBlock(0, 1.5, -31, 10, 3, 2.4, C.cover, C.coverEdge);
+  addBlock(0, 1.5, 31, 10, 3, 2.4, C.cover, C.coverEdge);
 
-  addGridFloor(70, 35, 0x2a1c10);
+  addGridFloor(92, 46, 0x2a1c10);
 
   return {
-    playerSpawns: [ new THREE.Vector3(30,1,-30), new THREE.Vector3(-30,1,-30), new THREE.Vector3(30,1,30), new THREE.Vector3(-30,1,30) ],
-    botSpawns: [ new THREE.Vector3(0,1,-28), new THREE.Vector3(0,1,28), new THREE.Vector3(28,1,0), new THREE.Vector3(-28,1,0), new THREE.Vector3(16,1,-20), new THREE.Vector3(-16,1,20) ],
+    playerSpawns: [ new THREE.Vector3(39,1,-39), new THREE.Vector3(-39,1,-39), new THREE.Vector3(39,1,39), new THREE.Vector3(-39,1,39) ],
+    botSpawns: [ new THREE.Vector3(0,1,-36), new THREE.Vector3(0,1,36), new THREE.Vector3(36,1,0), new THREE.Vector3(-36,1,0), new THREE.Vector3(21,1,-26), new THREE.Vector3(-21,1,26) ],
     wanderPool: [
-      new THREE.Vector3(0,0,-28), new THREE.Vector3(0,0,28), new THREE.Vector3(28,0,0), new THREE.Vector3(-28,0,0),
-      new THREE.Vector3(16,0,-20), new THREE.Vector3(-16,0,-20), new THREE.Vector3(16,0,20), new THREE.Vector3(-16,0,20),
-      new THREE.Vector3(0,0,-32), new THREE.Vector3(0,0,32), new THREE.Vector3(-32,0,0), new THREE.Vector3(32,0,0)
+      new THREE.Vector3(0,0,-36), new THREE.Vector3(0,0,36), new THREE.Vector3(36,0,0), new THREE.Vector3(-36,0,0),
+      new THREE.Vector3(21,0,-26), new THREE.Vector3(-21,0,-26), new THREE.Vector3(21,0,26), new THREE.Vector3(-21,0,26),
+      new THREE.Vector3(0,0,-40), new THREE.Vector3(0,0,40), new THREE.Vector3(-40,0,0), new THREE.Vector3(40,0,0)
     ],
-    pickupSpecs: [[16,3.9,-20],[-16,3.9,20],[0,7.3,4],[0,18.7,17.5],[-28,5.3,4]]
+    pickupSpecs: [[21,4.4,-26],[-21,4.4,26],[0,7.3,4],[0,20.1,24],[0,24.9,31]]
   };
 }
 
@@ -821,57 +836,62 @@ function buildSkybridgeMap(){
 function buildCanyonMap(){
   const C = COL_CANYON;
 
-  // long canyon floor
-  addBlock(0, -0.5, 0, 26, 1, 110, C.floor, C.floorEdge);
+  // long canyon floor — longer and wider
+  addBlock(0, -0.5, 0, 34, 1, 138, C.floor, C.floorEdge);
 
   // tall canyon walls (wall-run surfaces)
-  addBlock(0, 10, 55.5, 26, 20, 1, C.wall, C.wallEdge);
-  addBlock(0, 10, -55.5,26, 20, 1, C.wall, C.wallEdge);
-  addBlock(13.5, 10, 0, 1, 20, 110, C.wall, C.wallEdge);
-  addBlock(-13.5,10, 0, 1, 20, 110, C.wall, C.wallEdge);
+  addBlock(0, 13, 69.5, 34, 26, 1, C.wall, C.wallEdge);
+  addBlock(0, 13, -69.5,34, 26, 1, C.wall, C.wallEdge);
+  addBlock(17, 13, 0, 1, 26, 138, C.wall, C.wallEdge);
+  addBlock(-17,13, 0, 1, 26, 138, C.wall, C.wallEdge);
 
   // zigzag chicane cover jutting from alternating walls
-  addBlock(-9, 3, -35, 8, 6, 2.4, C.cover, C.coverEdge);
-  addBlock(9,  3, -18, 8, 6, 2.4, C.cover, C.coverEdge);
-  addBlock(-9, 3, -1,  8, 6, 2.4, C.cover, C.coverEdge);
-  addBlock(9,  3, 16,  8, 6, 2.4, C.cover, C.coverEdge);
-  addBlock(-9, 3, 33,  8, 6, 2.4, C.cover, C.coverEdge);
+  addBlock(-11, 3.5, -44, 10, 7, 2.6, C.cover, C.coverEdge);
+  addBlock(11,  3.5, -22, 10, 7, 2.6, C.cover, C.coverEdge);
+  addBlock(-11, 3.5, 0,   10, 7, 2.6, C.cover, C.coverEdge);
+  addBlock(11,  3.5, 20,  10, 7, 2.6, C.cover, C.coverEdge);
+  addBlock(-11, 3.5, 41,  10, 7, 2.6, C.cover, C.coverEdge);
 
-  // west-side sniper ledge, two tiers, reached by a stair near the south end
-  addBlock(-8, 1.0, -50, 3,2,3, C.plat, C.platEdge);
-  addBlock(-8, 3.0, -47, 3,2,3, C.plat, C.platEdge);
-  addBlock(-10, 5.0, 0, 3, 1, 90, C.tower, C.towerEdge);       // low west ledge
-  addBlock(-8, 6.6, -44, 3,2,3, C.plat, C.platEdge);
-  addBlock(-8, 8.6, -41, 3,2,3, C.plat, C.platEdge);
-  addBlock(-10.5, 10.5, 0, 2.4, 1, 60, C.tower, C.towerEdge);  // high west ledge
+  // west-side sniper ledges, now THREE tiers — reached by a stair near the south end
+  addBlock(-10, 1.0, -63, 3,2,3, C.plat, C.platEdge);
+  addBlock(-10, 3.0, -59, 3,2,3, C.plat, C.platEdge);
+  addBlock(-13, 5.0, 0, 3, 1, 112, C.tower, C.towerEdge);       // low west ledge
+  addBlock(-10, 6.6, -55, 3,2,3, C.plat, C.platEdge);
+  addBlock(-10, 8.6, -51, 3,2,3, C.plat, C.platEdge);
+  addBlock(-13.5, 10.5, 0, 2.6, 1, 76, C.tower, C.towerEdge);   // high west ledge
+  addBlock(-10, 12.1, -47, 3,2,3, C.plat, C.platEdge);
+  addBlock(-10, 13.7, -44, 3,2,3, C.plat, C.platEdge);
+  addBlock(-10, 15.3, -41, 3,2,3, C.plat, C.platEdge);
+  addBlock(-10, 16.9, -38, 3,2,3, C.plat, C.platEdge);
+  addBlock(-13.5, 17.5, -15, 2.6, 1, 50, C.tower, C.towerEdge); // west-only crow's-nest catwalk
 
-  // east-side sniper ledge, mirrored, reached near the north end
-  addBlock(8, 1.0, 50, 3,2,3, C.plat, C.platEdge);
-  addBlock(8, 3.0, 47, 3,2,3, C.plat, C.platEdge);
-  addBlock(10, 5.0, 0, 3, 1, 90, C.tower, C.towerEdge);
-  addBlock(8, 6.6, 44, 3,2,3, C.plat, C.platEdge);
-  addBlock(8, 8.6, 41, 3,2,3, C.plat, C.platEdge);
-  addBlock(10.5, 10.5, 0, 2.4, 1, 60, C.tower, C.towerEdge);
+  // east-side sniper ledge, mirrored, reached near the north end — two tiers for variety/asymmetry
+  addBlock(10, 1.0, 63, 3,2,3, C.plat, C.platEdge);
+  addBlock(10, 3.0, 59, 3,2,3, C.plat, C.platEdge);
+  addBlock(13, 5.0, 0, 3, 1, 112, C.tower, C.towerEdge);
+  addBlock(10, 6.6, 55, 3,2,3, C.plat, C.platEdge);
+  addBlock(10, 8.6, 51, 3,2,3, C.plat, C.platEdge);
+  addBlock(13.5, 10.5, 0, 2.6, 1, 76, C.tower, C.towerEdge);
 
   // mid-canyon crossing bridge linking both high ledges, with its own stair from the ground
-  addBlock(0, 11, 0, 20, 1, 3, C.tower, C.towerEdge);
+  addBlock(0, 11, 0, 26, 1, 3.6, C.tower, C.towerEdge);
   addBlock(0, 1.0, 4, 3,2,3, C.plat, C.platEdge);
   addBlock(0, 3.0, 6, 3,2,3, C.plat, C.platEdge);
   addBlock(0, 5.0, 8, 3,2,3, C.plat, C.platEdge);
   addBlock(0, 7.0, 8, 3,2,3, C.plat, C.platEdge);
   addBlock(0, 9.0, 6, 3,2,3, C.plat, C.platEdge);
 
-  addGridFloor(110, 44, 0x2a1408);
+  addGridFloor(138, 55, 0x2a1408);
 
   return {
-    playerSpawns: [ new THREE.Vector3(0,1,-50), new THREE.Vector3(0,1,50), new THREE.Vector3(-6,1,0), new THREE.Vector3(6,1,0) ],
-    botSpawns: [ new THREE.Vector3(0,1,-40), new THREE.Vector3(0,1,40), new THREE.Vector3(-6,1,-20), new THREE.Vector3(6,1,20), new THREE.Vector3(0,1,-10), new THREE.Vector3(0,1,10) ],
+    playerSpawns: [ new THREE.Vector3(0,1,-63), new THREE.Vector3(0,1,63), new THREE.Vector3(-8,1,0), new THREE.Vector3(8,1,0) ],
+    botSpawns: [ new THREE.Vector3(0,1,-50), new THREE.Vector3(0,1,50), new THREE.Vector3(-8,1,-25), new THREE.Vector3(8,1,25), new THREE.Vector3(0,1,-12), new THREE.Vector3(0,1,12) ],
     wanderPool: [
-      new THREE.Vector3(-5,0,-45), new THREE.Vector3(5,0,-30), new THREE.Vector3(-5,0,-15), new THREE.Vector3(5,0,0),
-      new THREE.Vector3(-5,0,15), new THREE.Vector3(5,0,30), new THREE.Vector3(-5,0,45), new THREE.Vector3(0,0,0),
-      new THREE.Vector3(0,0,-25), new THREE.Vector3(0,0,25)
+      new THREE.Vector3(-6,0,-56), new THREE.Vector3(6,0,-38), new THREE.Vector3(-6,0,-19), new THREE.Vector3(6,0,0),
+      new THREE.Vector3(-6,0,19), new THREE.Vector3(6,0,38), new THREE.Vector3(-6,0,56), new THREE.Vector3(0,0,0),
+      new THREE.Vector3(0,0,-31), new THREE.Vector3(0,0,31)
     ],
-    pickupSpecs: [[0,1.4,-40],[0,1.4,40],[0,12.4,0],[-8,10.0,-41],[8,10.0,41]]
+    pickupSpecs: [[0,1.4,-50],[0,1.4,50],[0,12.4,0],[-13.5,18.9,-15],[13.5,12.0,0]]
   };
 }
 
@@ -926,6 +946,9 @@ const GRAPPLE_ACCEL = 78, GRAPPLE_MAXSPEED = 44, GRAPPLE_MAX_RANGE = 60;
 const GRAPPLE_COOLDOWN = 0.35;
 const HEAL_ON_KILL = 25;
 
+const GRENADE_COOLDOWN = 2.5, GRENADE_FUSE = 1.6, GRENADE_DAMAGE = 70, GRENADE_SPLASH = 7, GRENADE_THROW_SPEED = 26;
+const DASH_SPEED = 22, DASH_COOLDOWN = 2.2;
+
 const WEAPONS = [
   { id:'blaster', name:'BLASTER',        damage:26, headshotDamage:48,  cooldown:0.15,  spread:0.010, adsSpread:0.004, automatic:false, pellets:1, range:200, adsZoom:0.9,  moveMultAds:1,    recoil:0.09, kickPitch:0.014, adsSensitivity:0.55, restOffset:new THREE.Vector3(0,0,0) },
   { id:'smg',     name:'SMG',            damage:14, headshotDamage:26,  cooldown:0.09,  spread:0.028, adsSpread:0.012, automatic:true,  pellets:1, range:200, adsZoom:0.85, moveMultAds:1,    recoil:0.05, kickPitch:0.008, adsSensitivity:0.6,  restOffset:new THREE.Vector3(0,0.02,0.05) },
@@ -957,6 +980,8 @@ let shakeAmount = 0;
 let hitStopTimer = 0;
 
 const grapple = { active:false, point:new THREE.Vector3(), elapsed:0, cooldown:0, line:null };
+let grenadeCooldown = 0;
+let dashCooldown = 0;
 
 let playerHP = 100, kills = 0, deaths = 0;
 let isDead = false, respawnTimer = 0;
@@ -984,6 +1009,8 @@ window.addEventListener('keydown', e=>{
   if(e.code === 'Escape' && buyMenuOpen){ closeBuyMenu(); return; }
   if(paused) return;
   if(e.code === 'KeyE' && !e.repeat) startGrapple();
+  if(e.code === 'KeyG' && !e.repeat) throwGrenade();
+  if(e.code === 'KeyQ' && !e.repeat) tryDash();
   if(e.code === 'Tab'){ e.preventDefault(); showTabList(true); }
   if(e.code in WEAPON_KEYS) switchWeapon(WEAPON_KEYS[e.code]);
 });
@@ -1157,7 +1184,7 @@ function startGame(mapId){
   renderer.domElement.requestPointerLock();
   initAudio();
   bots.forEach(b=>{ b.group.visible = botsEnabled && b.alive; });
-  showTip('Hold E to grapple, RIGHT CLICK to aim, B for loadout, TAB for roster.', 7000);
+  showTip('Hold E to grapple, G to throw a grenade, Q to dash, B for loadout, TAB for roster.', 7000);
 }
 
 createServerBtn.addEventListener('click', ()=>{
@@ -1298,7 +1325,9 @@ const sfx = {
   pickup: ()=> playTone(700,0.12,'sine',0.06,1100),
   swing: ()=> playTone(260,0.14,'sawtooth',0.05,90),
   swordHit: ()=> playTone(180,0.16,'sawtooth',0.09,60),
-  explode: ()=> playTone(80,0.4,'sawtooth',0.09,30)
+  explode: ()=> playTone(80,0.4,'sawtooth',0.09,30),
+  dash: ()=> playTone(650,0.12,'sawtooth',0.06,1400),
+  grenadeThrow: ()=> playTone(320,0.1,'square',0.05,500)
 };
 
 /* ============================================================
@@ -1518,14 +1547,25 @@ function disposeGroup(group){
 let botSpawns = [];
 let wanderPool = [];
 
-function makeNameSprite(text, colorHex){
+const BOT_NAME_COLOR = 0x141414;
+const PLAYER_NAME_COLOR = 0xff7a00;
+
+function makeNameSprite(text, colorHex, opts){
+  opts = opts || {};
   const canvas = document.createElement('canvas');
   canvas.width = 256; canvas.height = 64;
   const ctx = canvas.getContext('2d');
   ctx.font = 'bold 34px monospace';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.shadowColor = colorHex; ctx.shadowBlur = 16;
-  ctx.fillStyle = colorHex;
+  const color = '#' + new THREE.Color(colorHex).getHexString();
+  if(opts.outline){
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = opts.outline;
+    ctx.strokeText(text, 128, 32);
+  } else {
+    ctx.shadowColor = color; ctx.shadowBlur = 16;
+  }
+  ctx.fillStyle = color;
   ctx.fillText(text, 128, 32);
   const tex = new THREE.CanvasTexture(canvas);
   const mat = new THREE.SpriteMaterial({ map:tex, transparent:true, depthTest:false });
@@ -1578,7 +1618,7 @@ function makeHumanoidModel(colorHex){
 
 function makeBot(name, colorHex){
   const { group, body, head, hpFill } = makeHumanoidModel(colorHex);
-  group.add(makeNameSprite(name, colorHex));
+  group.add(makeNameSprite(name, BOT_NAME_COLOR, { outline:'rgba(255,255,255,0.55)' }));
   scene.add(group);
 
   [body, head].forEach(m=> m.userData.botRef = null); // set after bot object created
@@ -1773,7 +1813,7 @@ const NET_SEND_INTERVAL = 1/15;
 
 function makeRemotePlayer(id, name, colorHex){
   const { group, body, head, hpFill } = makeHumanoidModel(colorHex);
-  group.add(makeNameSprite(name, colorHex));
+  group.add(makeNameSprite(name, PLAYER_NAME_COLOR));
   scene.add(group);
   const entry = {
     id, name, colorHex, group, body, head, hpFill,
@@ -1897,6 +1937,14 @@ function ensureSocket(){
       new THREE.Vector3(data.x, data.y, data.z),
       new THREE.Vector3(data.dx, data.dy, data.dz),
       rpgDef,
+      false
+    );
+  });
+
+  socket.on('grenadeFired', (data)=>{
+    spawnLocalGrenade(
+      new THREE.Vector3(data.x, data.y, data.z),
+      new THREE.Vector3(data.dx, data.dy, data.dz),
       false
     );
   });
@@ -2112,6 +2160,135 @@ function updateRockets(dt){
 }
 
 /* ============================================================
+   GRENADES — thrown on an arc under gravity, explode on a timed
+   fuse (not on impact) so they can be bounced/landed before
+   detonating; a direct hit on a bot/player detonates immediately.
+   ============================================================ */
+const grenades = [];
+const grenadeRaycaster = new THREE.Raycaster();
+
+function buildGrenadeMesh(){
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.IcosahedronGeometry(0.12,0), new THREE.MeshBasicMaterial({ color:0x2a2a2a }));
+  g.add(body);
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.25,0.04,0.04), new THREE.MeshBasicMaterial({ color:0xff7a00 }));
+  g.add(stripe);
+  return g;
+}
+
+function spawnLocalGrenade(origin, dir, isLocal){
+  const mesh = buildGrenadeMesh();
+  mesh.position.copy(origin);
+  scene.add(mesh);
+  grenades.push({
+    mesh, vel: dir.clone().multiplyScalar(GRENADE_THROW_SPEED), life: GRENADE_FUSE, landed:false, isLocal
+  });
+}
+
+function throwGrenade(){
+  if(grenadeCooldown > 0 || isDead) return;
+  grenadeCooldown = GRENADE_COOLDOWN;
+  const forward = new THREE.Vector3();
+  camera.getWorldDirection(forward);
+  const dir = forward.clone().lerp(new THREE.Vector3(0,1,0), 0.18).normalize();
+  const origin = camera.position.clone().add(new THREE.Vector3(0.25,-0.15,0).applyQuaternion(camera.quaternion));
+  spawnLocalGrenade(origin, dir, true);
+  sfx.grenadeThrow();
+  if(socket && socket.connected){
+    socket.emit('grenadeFired', { x:origin.x, y:origin.y, z:origin.z, dx:dir.x, dy:dir.y, dz:dir.z });
+  }
+}
+
+function explodeGrenade(g){
+  const point = g.mesh.position.clone();
+  spawnParticles(point, 0xff7a00, 22, 5, 0.5);
+  spawnParticles(point, 0xffcc00, 10, 3, 0.35);
+  sfx.explode();
+
+  if(!g.isLocal) return; // ghost grenades from other clients are visual-only, no damage
+
+  const falloff = dist => Math.max(0, 1 - dist/GRENADE_SPLASH);
+
+  if(botsEnabled){
+    bots.forEach(bot=>{
+      if(!bot.alive) return;
+      const dist = bot.group.position.distanceTo(point);
+      if(dist <= GRENADE_SPLASH){
+        const dmg = GRENADE_DAMAGE*falloff(dist);
+        damageBot(bot, dmg, false);
+        spawnDamageNumber(bot.group.position.clone().add(new THREE.Vector3(0,1.7,0)), dmg, false);
+      }
+    });
+  }
+  remotePlayers.forEach(p=>{
+    if(!p.alive) return;
+    const dist = p.pos.distanceTo(point);
+    if(dist <= GRENADE_SPLASH){
+      const dmg = GRENADE_DAMAGE*falloff(dist);
+      if(socket) socket.emit('shotHit', { targetId: p.id, damage: dmg, headshot:false });
+      spawnDamageNumber(p.pos.clone().add(new THREE.Vector3(0,1.7,0)), dmg, false);
+    }
+  });
+
+  if(!isDead){
+    const selfDist = camera.position.distanceTo(point);
+    if(selfDist <= GRENADE_SPLASH){
+      playerHP -= GRENADE_DAMAGE*falloff(selfDist);
+      shakeAmount = Math.max(shakeAmount, 0.4);
+      flashDamage();
+      sfx.hurt();
+      if(playerHP <= 0) respawnPlayer('YOU BLEW YOURSELF UP');
+    }
+  }
+}
+
+function updateGrenades(dt){
+  for(let i=grenades.length-1; i>=0; i--){
+    const g = grenades[i];
+    g.life -= dt;
+
+    if(!g.landed){
+      g.vel.y += GRAVITY*dt;
+      const step = g.vel.clone().multiplyScalar(dt);
+      const stepLen = step.length();
+      if(stepLen > 0.0001){
+        grenadeRaycaster.set(g.mesh.position, step.clone().normalize());
+        grenadeRaycaster.far = stepLen + 0.12;
+        const targets = g.isLocal
+          ? solidMeshes
+              .concat(botsEnabled ? bots.filter(b=>b.alive).flatMap(b=>[b.body,b.head]) : [])
+              .concat(Array.from(remotePlayers.values()).filter(p=>p.alive).flatMap(p=>[p.body,p.head]))
+          : solidMeshes;
+        const hits = grenadeRaycaster.intersectObjects(targets, false);
+        if(hits.length){
+          const hit = hits[0];
+          const isCharacter = !!(hit.object.userData.botRef || hit.object.userData.remoteRef);
+          g.mesh.position.copy(hit.point);
+          if(isCharacter){
+            explodeGrenade(g);
+            scene.remove(g.mesh); disposeGroup(g.mesh);
+            grenades.splice(i,1);
+            continue;
+          }
+          g.landed = true;
+          g.vel.set(0,0,0);
+        } else {
+          g.mesh.position.add(step);
+        }
+      }
+      g.mesh.rotation.x += dt*7;
+      g.mesh.rotation.z += dt*5;
+    }
+
+    if(g.life <= 0){
+      explodeGrenade(g);
+      scene.remove(g.mesh); disposeGroup(g.mesh);
+      grenades.splice(i,1);
+    }
+  }
+}
+
+/* ============================================================
    COMBAT
    ============================================================ */
 let fireCooldownTimer = 0;
@@ -2283,6 +2460,36 @@ function updateGrappleLine(){
   }
 }
 
+function tryDash(){
+  if(dashCooldown > 0 || isDead) return;
+  const forward = new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+  const right = new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+  let ix=0, iz=0;
+  if(keys['KeyW']) iz -= 1;
+  if(keys['KeyS']) iz += 1;
+  if(keys['KeyA']) ix -= 1;
+  if(keys['KeyD']) ix += 1;
+  let dir;
+  if(ix !== 0 || iz !== 0){
+    const len = Math.hypot(ix,iz);
+    dir = forward.clone().multiplyScalar(-iz/len).add(right.clone().multiplyScalar(ix/len));
+  } else {
+    dir = forward.clone();
+  }
+  dir.y = 0;
+  if(dir.lengthSq() < 0.0001) return;
+  dir.normalize();
+
+  velocity.x = dir.x * DASH_SPEED;
+  velocity.z = dir.z * DASH_SPEED;
+  if(grounded) velocity.y = Math.max(velocity.y, 3);
+  dashCooldown = DASH_COOLDOWN;
+  shakeAmount = Math.max(shakeAmount, 0.22);
+  camRoll += (dir.dot(right) > 0 ? -1 : 1) * 0.05;
+  spawnParticles(feetPos.clone().add(new THREE.Vector3(0,0.8,0)), 0xff7a00, 12, 3.5, 0.3);
+  sfx.dash();
+}
+
 /* ============================================================
    FIRST-PERSON WEAPON VIEWMODEL
    Rendered in a separate scene/camera pass after the main render,
@@ -2382,6 +2589,10 @@ const healthFill = document.getElementById('healthFill');
 const hpText = document.getElementById('hpText');
 const grappleBarInner = document.getElementById('grappleBarInner');
 const grappleText = document.getElementById('grappleText');
+const grenadeBarInner = document.getElementById('grenadeBarInner');
+const grenadeText = document.getElementById('grenadeText');
+const dashBarInner = document.getElementById('dashBarInner');
+const dashText = document.getElementById('dashText');
 const killsEl = document.getElementById('killsEl');
 const deathsEl = document.getElementById('deathsEl');
 const speedEl = document.getElementById('speedEl');
@@ -2479,6 +2690,14 @@ function updateHUD(){
   grappleBarInner.style.width = gReady ? '100%' : (100*(1 - grapple.cooldown/GRAPPLE_COOLDOWN)) + '%';
   grappleText.textContent = grapple.active ? 'ACTIVE' : (gReady ? 'READY' : '...');
 
+  const nReady = grenadeCooldown <= 0;
+  grenadeBarInner.style.width = nReady ? '100%' : (100*(1 - grenadeCooldown/GRENADE_COOLDOWN)) + '%';
+  grenadeText.textContent = nReady ? 'READY' : '...';
+
+  const dReady = dashCooldown <= 0;
+  dashBarInner.style.width = dReady ? '100%' : (100*(1 - dashCooldown/DASH_COOLDOWN)) + '%';
+  dashText.textContent = dReady ? 'READY' : '...';
+
   killsEl.textContent = kills;
   deathsEl.textContent = deaths;
   speedEl.textContent = Math.hypot(velocity.x, velocity.z).toFixed(1);
@@ -2566,6 +2785,8 @@ function updatePlayer(dt){
 
   fireCooldownTimer -= dt;
   if(grapple.cooldown > 0) grapple.cooldown -= dt;
+  if(grenadeCooldown > 0) grenadeCooldown -= dt;
+  if(dashCooldown > 0) dashCooldown -= dt;
   if(mouseHeld && WEAPONS[currentWeaponIndex].automatic) fireWeapon();
 
   let ix=0, iz=0;
@@ -2789,6 +3010,7 @@ function animate(){
     updateParticles(dt);
     updateTracers(dt);
     updateRockets(dt);
+    updateGrenades(dt);
     updateDamageNumbers(dt);
     updateGrappleLine();
     updateWorld(dt, gameTime);

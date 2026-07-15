@@ -115,6 +115,14 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('rocketFired', data);
   });
 
+  socket.on('grenadeFired', (data) => {
+    const roomId = socket.data.roomId;
+    if (!roomId) return;
+    if (typeof data?.x !== 'number' || typeof data?.y !== 'number' || typeof data?.z !== 'number' ||
+        typeof data?.dx !== 'number' || typeof data?.dy !== 'number' || typeof data?.dz !== 'number') return;
+    socket.to(roomId).emit('grenadeFired', data);
+  });
+
   socket.on('died', (data) => {
     const roomId = socket.data.roomId;
     if (!roomId) return;
