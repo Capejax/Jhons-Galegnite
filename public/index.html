@@ -48,14 +48,15 @@
     font-family:'Chakra Petch',sans-serif; letter-spacing:3px; color:var(--magenta);
     text-shadow:0 0 10px var(--magenta); font-size:0.85rem; margin-bottom:26px;
   }
-  #playBtn{
-    font-family:'Chakra Petch',sans-serif; font-weight:700; letter-spacing:3px; font-size:1.1rem;
+  .menuBtn{
+    font-family:'Chakra Petch',sans-serif; font-weight:700; letter-spacing:3px; font-size:0.95rem;
     background:linear-gradient(135deg, rgba(0,255,242,0.18), rgba(139,92,246,0.18));
-    border:1px solid var(--cyan); color:#eafcff; padding:14px 42px; cursor:pointer;
+    border:1px solid var(--cyan); color:#eafcff; padding:11px 28px; cursor:pointer;
     border-radius:4px; box-shadow:0 0 18px rgba(0,255,242,0.35);
     transition:transform .12s ease, box-shadow .12s ease;
   }
-  #playBtn:hover{ transform:translateY(-2px); box-shadow:0 0 30px rgba(0,255,242,0.6); }
+  .menuBtn:hover{ transform:translateY(-2px); box-shadow:0 0 30px rgba(0,255,242,0.6); }
+  .menuBtn.small{ padding:7px 16px; font-size:0.78rem; }
   #controlsList{
     margin-top:28px; text-align:left; font-size:0.92rem; line-height:1.7;
     color:#b9e9ff; border-top:1px solid rgba(255,255,255,0.12); padding-top:18px;
@@ -89,6 +90,33 @@
   #onlineCount b{ color:var(--amber); text-shadow:0 0 6px var(--amber); }
   #onlineCount .dot{ display:inline-block; width:7px; height:7px; border-radius:50%; background:#39ff14; box-shadow:0 0 6px #39ff14; margin-right:6px; }
 
+  .sectionLabel{ font-size:0.72rem; letter-spacing:2.5px; color:var(--cyan); text-shadow:0 0 6px var(--cyan); margin-bottom:8px; }
+  #createServerBox, #serverListBox{
+    margin-top:20px; text-align:left; border-top:1px solid rgba(255,255,255,0.1); padding-top:16px;
+  }
+  #serverNameInput{
+    width:100%; font-family:'Rajdhani',sans-serif; font-size:0.95rem; letter-spacing:1px;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(0,255,242,0.3); color:#eafcff;
+    padding:8px 12px; border-radius:4px; margin-bottom:10px;
+  }
+  .createRow{ display:flex; align-items:center; gap:10px; }
+  .createBotsLabel{ font-size:0.72rem; letter-spacing:1.5px; color:#b9e9ff; flex:1; }
+  .switch.small{ width:36px; height:20px; }
+  .switch.small .switchTrack::before{ height:13px; width:13px; top:2px; left:2px; }
+  .switch.small input:checked + .switchTrack::before{ transform:translateX(16px); }
+
+  #serverList{ max-height:150px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .serverListEmpty{ font-size:0.78rem; color:#7fa0ad; padding:8px 0; }
+  .serverRow{
+    display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid rgba(0,255,242,0.18);
+    border-radius:4px; background:rgba(255,255,255,0.03);
+  }
+  .serverRow .srvName{ font-weight:600; color:#eafcff; font-size:0.85rem; }
+  .serverRow .srvMeta{ font-size:0.7rem; color:#7fa0ad; flex:1; }
+  .serverRow .srvBots{ font-size:0.65rem; letter-spacing:1px; color:#7fd; }
+
+  #menuError{ color:var(--danger); font-size:0.78rem; letter-spacing:1px; margin-top:10px; min-height:1em; }
+
   .settingRow{ margin-bottom:20px; }
   .settingRow label{ display:flex; justify-content:space-between; font-size:0.78rem; letter-spacing:1.5px; color:#b9e9ff; margin-bottom:8px; }
   .settingRow label span:last-child{ color:var(--amber); }
@@ -116,8 +144,14 @@
   #resumeBtn{
     font-family:'Chakra Petch',sans-serif; font-weight:700; letter-spacing:2px;
     background:rgba(255,43,214,0.15); border:1px solid var(--magenta); color:#fff;
-    padding:12px 32px; border-radius:4px; cursor:pointer; margin-top:14px;
+    padding:12px 32px; border-radius:4px; cursor:pointer; margin-top:14px; display:block; width:100%;
   }
+  #leaveBtn{
+    font-family:'Chakra Petch',sans-serif; font-weight:600; letter-spacing:2px; font-size:0.85rem;
+    background:transparent; border:1px solid rgba(255,59,59,0.5); color:var(--danger);
+    padding:9px 32px; border-radius:4px; cursor:pointer; margin-top:10px; display:block; width:100%;
+  }
+  #leaveBtn:hover{ background:rgba(255,59,59,0.12); }
 
   /* ===== HUD ===== */
   #hud{ position:fixed; inset:0; z-index:10; pointer-events:none; display:none; font-family:'Chakra Petch',sans-serif; }
@@ -212,6 +246,27 @@
   #tabListHeader{ color:#7fa0ad; letter-spacing:2px; font-size:0.68rem; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:8px; }
   .tabListRow{ border-bottom:1px solid rgba(255,255,255,0.06); }
   .tabListRow .role{ color:#7fa0ad; }
+
+  #buyMenu{
+    position:fixed; inset:0; z-index:16; display:none; align-items:center; justify-content:center;
+    background:rgba(3,4,10,0.72); backdrop-filter:blur(3px); pointer-events:auto;
+  }
+  #buyMenu.show{ display:flex; }
+  .buyMenuPanel{
+    min-width:460px; max-width:680px; width:82%; padding:26px 30px; border:1px solid rgba(139,92,246,0.4);
+    background:var(--panel); border-radius:6px; box-shadow:0 0 40px rgba(139,92,246,0.25);
+  }
+  .buyMenuPanel h3{ font-family:'Chakra Petch',sans-serif; letter-spacing:3px; color:var(--violet); text-shadow:0 0 8px var(--violet); margin:0 0 16px 0; font-size:1.1rem; }
+  #buyMenuGrid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; }
+  .weaponCard{
+    text-align:left; padding:12px 14px; border:1px solid rgba(0,255,242,0.25); border-radius:4px;
+    background:rgba(255,255,255,0.03); cursor:pointer; transition:transform .1s ease, box-shadow .1s ease;
+  }
+  .weaponCard:hover{ transform:translateY(-2px); box-shadow:0 0 16px rgba(0,255,242,0.25); }
+  .weaponCard.equipped{ border-color:var(--cyan); box-shadow:0 0 14px rgba(0,255,242,0.35); }
+  .weaponCard .wName{ font-family:'Chakra Petch',sans-serif; letter-spacing:1.5px; font-size:0.9rem; color:#eafcff; }
+  .weaponCard .wStats{ font-size:0.7rem; color:#7fa0ad; margin-top:4px; letter-spacing:0.5px; }
+  .buyMenuHint{ margin-top:16px; font-size:0.72rem; color:#7fa0ad; letter-spacing:1px; text-align:center; }
 </style>
 </head>
 <body>
@@ -232,9 +287,25 @@
         <label for="nameInput">CALLSIGN</label>
         <input id="nameInput" type="text" maxlength="16" autocomplete="off" spellcheck="false" />
       </div>
-      <button id="playBtn">▶ ENTER ARENA</button>
       <div id="onlineCount"><span class="dot"></span><b id="onlineCountNum">–</b> ONLINE NOW</div>
-      <div id="menuNote">Real-time multiplayer arena — everyone who joins fights together, plus 5 neon AI bots on every server. If the connection ever drops, you keep playing solo vs. bots.</div>
+
+      <div id="createServerBox">
+        <div class="sectionLabel">CREATE A SERVER</div>
+        <input id="serverNameInput" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="SERVER NAME" />
+        <div class="createRow">
+          <label class="switch small"><input type="checkbox" id="createBotsToggle" checked /><span class="switchTrack"></span></label>
+          <span class="createBotsLabel">AI BOTS</span>
+          <button id="createServerBtn" class="menuBtn">CREATE</button>
+        </div>
+      </div>
+
+      <div id="serverListBox">
+        <div class="sectionLabel">JOIN A SERVER</div>
+        <div id="serverList"><div class="serverListEmpty">No servers yet — create one above.</div></div>
+      </div>
+
+      <div id="menuError"></div>
+      <div id="menuNote">Real-time multiplayer — create or join a server to fight alongside (and against) other players, plus shared AI bots. If the connection ever drops, you keep playing solo vs. bots.</div>
     </div>
 
     <div class="tabPanel" data-panel="settings">
@@ -262,9 +333,10 @@
         <div><b>SHIFT</b> — sprint &nbsp; <b>C</b> — slide while sprinting</div>
         <div><b>Run at a wall + jump</b> — wall-run automatically, <b>SPACE</b> to wall-jump</div>
         <div><b>E</b> (hold) — fire grappling hook, pulls you to the point</div>
-        <div><b>LEFT CLICK</b> — fire weapon &nbsp; <b>RIGHT CLICK</b> (hold) — aim down sights</div>
-        <div><b>1-4</b> — switch weapon: blaster, SMG, deagle, sniper</div>
-        <div><b>TAB</b> (hold) — full arena roster &nbsp; <b>ESC</b> — pause</div>
+        <div><b>LEFT CLICK</b> — fire/swing &nbsp; <b>RIGHT CLICK</b> (hold) — aim down sights</div>
+        <div><b>1-7</b> — switch gun &nbsp; <b>8</b> — sword</div>
+        <div><b>B</b> — loadout menu &nbsp; <b>TAB</b> (hold) — full arena roster</div>
+        <div><b>ESC</b> — pause, with an option to leave to the main menu</div>
         <div>Get a kill to heal +25 HP. Taller towers make good sniper nests.</div>
       </div>
     </div>
@@ -275,6 +347,7 @@
   <div class="panel">
     <h2>PAUSED</h2>
     <button id="resumeBtn">RESUME</button>
+    <button id="leaveBtn">LEAVE TO MENU</button>
   </div>
 </div>
 
@@ -291,6 +364,14 @@
       <h3>ARENA ROSTER</h3>
       <div id="tabListHeader"><span>NAME</span><span>ROLE</span><span>SCORE</span></div>
       <div id="tabListRows"></div>
+    </div>
+  </div>
+
+  <div id="buyMenu">
+    <div class="buyMenuPanel">
+      <h3>LOADOUT</h3>
+      <div id="buyMenuGrid"></div>
+      <div class="buyMenuHint">Click a weapon to equip it &nbsp;·&nbsp; press B or ESC to close</div>
     </div>
   </div>
 
@@ -483,13 +564,18 @@ const GRAPPLE_COOLDOWN = 0.35;
 const HEAL_ON_KILL = 25;
 
 const WEAPONS = [
-  { id:'blaster', name:'BLASTER', damage:26, headshotDamage:48, cooldown:0.15, spread:0.010, adsSpread:0.004, automatic:false, adsZoom:0.9,  moveMultAds:1,    recoil:0.09, kickPitch:0.014, restOffset:new THREE.Vector3(0,0,0) },
-  { id:'smg',     name:'SMG',     damage:14, headshotDamage:26, cooldown:0.09, spread:0.028, adsSpread:0.012, automatic:true,  adsZoom:0.85, moveMultAds:1,    recoil:0.05, kickPitch:0.008, restOffset:new THREE.Vector3(0,0.02,0.05) },
-  { id:'deagle',  name:'DEAGLE',  damage:34, headshotDamage:70, cooldown:0.32, spread:0.006, adsSpread:0.0015,automatic:false, adsZoom:0.8,  moveMultAds:1,    recoil:0.16, kickPitch:0.022, restOffset:new THREE.Vector3(0.02,-0.02,0.12) },
-  { id:'sniper',  name:'SNIPER',  damage:85, headshotDamage:150,cooldown:1.1,  spread:0.002, adsSpread:0,      automatic:false, adsZoom:0.16, moveMultAds:0.35, recoil:0.22, kickPitch:0.03, restOffset:new THREE.Vector3(-0.04,-0.05,-0.15) }
+  { id:'blaster', name:'BLASTER',        damage:26, headshotDamage:48,  cooldown:0.15,  spread:0.010, adsSpread:0.004, automatic:false, pellets:1, range:200, adsZoom:0.9,  moveMultAds:1,    recoil:0.09, kickPitch:0.014, restOffset:new THREE.Vector3(0,0,0) },
+  { id:'smg',     name:'SMG',            damage:14, headshotDamage:26,  cooldown:0.09,  spread:0.028, adsSpread:0.012, automatic:true,  pellets:1, range:200, adsZoom:0.85, moveMultAds:1,    recoil:0.05, kickPitch:0.008, restOffset:new THREE.Vector3(0,0.02,0.05) },
+  { id:'deagle',  name:'DEAGLE',         damage:34, headshotDamage:70,  cooldown:0.32,  spread:0.006, adsSpread:0.0015,automatic:false, pellets:1, range:200, adsZoom:0.8,  moveMultAds:1,    recoil:0.16, kickPitch:0.022, restOffset:new THREE.Vector3(0.02,-0.02,0.12) },
+  { id:'sniper',  name:'SNIPER',         damage:85, headshotDamage:150, cooldown:1.1,   spread:0.002, adsSpread:0,      automatic:false, pellets:1, range:400, adsZoom:0.16, moveMultAds:0.35, recoil:0.22, kickPitch:0.03,  restOffset:new THREE.Vector3(-0.04,-0.05,-0.15) },
+  { id:'ar',      name:'ASSAULT RIFLE',  damage:20, headshotDamage:38,  cooldown:0.11,  spread:0.018, adsSpread:0.007,  automatic:true,  pellets:1, range:250, adsZoom:0.82, moveMultAds:1,    recoil:0.06, kickPitch:0.010, restOffset:new THREE.Vector3(0,0.01,0.03) },
+  { id:'shotgun', name:'SHOTGUN',        damage:9,  headshotDamage:15,  cooldown:0.75,  spread:0.05,  adsSpread:0.03,   automatic:false, pellets:8, range:40,  adsZoom:0.95, moveMultAds:0.9,  recoil:0.28, kickPitch:0.05,  restOffset:new THREE.Vector3(0.03,-0.03,0.05) },
+  { id:'minigun', name:'MINIGUN',        damage:10, headshotDamage:16,  cooldown:0.045, spread:0.05,  adsSpread:0.03,   automatic:true,  pellets:1, range:200, adsZoom:0.9,  moveMultAds:0.6,  recoil:0.03, kickPitch:0.006, restOffset:new THREE.Vector3(0,-0.02,0.15) },
+  { id:'sword',   name:'SWORD',          damage:55, headshotDamage:90,  cooldown:0.5,   spread:0,     adsSpread:0,      automatic:false, pellets:1, range:2.6, adsZoom:1,    moveMultAds:1,    recoil:0,    kickPitch:0,     restOffset:new THREE.Vector3(0,-0.02,0.05), melee:true }
 ];
 let currentWeaponIndex = 0;
 let mouseHeld = false, adsActive = false, adsBlend = 0;
+let swordSwingPhase = 0;
 
 const feetPos = new THREE.Vector3(0,1,-35);
 const velocity = new THREE.Vector3(0,0,0);
@@ -521,11 +607,19 @@ const playerSpawns = [
 /* ============================================================
    INPUT
    ============================================================ */
-const WEAPON_KEYS = { Digit1:0, Digit2:1, Digit3:2, Digit4:3 };
+const WEAPON_KEYS = { Digit1:0, Digit2:1, Digit3:2, Digit4:3, Digit5:4, Digit6:5, Digit7:6, Digit8:7 };
+let buyMenuOpen = false;
 const keys = {};
 window.addEventListener('keydown', e=>{
   keys[e.code]=true;
-  if(!started || paused) return;
+  if(!started) return;
+  if(e.code === 'KeyB' && !e.repeat){
+    if(buyMenuOpen) closeBuyMenu();
+    else if(!paused) openBuyMenu();
+    return;
+  }
+  if(e.code === 'Escape' && buyMenuOpen){ closeBuyMenu(); return; }
+  if(paused) return;
   if(e.code === 'KeyE' && !e.repeat) startGrapple();
   if(e.code === 'Tab'){ e.preventDefault(); showTabList(true); }
   if(e.code in WEAPON_KEYS) switchWeapon(WEAPON_KEYS[e.code]);
@@ -559,6 +653,10 @@ renderer.domElement.addEventListener('mouseup', e=>{
 /* ============================================================
    MENU / PAUSE / POINTER LOCK
    ============================================================ */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 const menuEl = document.getElementById('menu');
 const pauseEl = document.getElementById('pauseMenu');
 const hudEl = document.getElementById('hud');
@@ -568,6 +666,8 @@ const weaponLabelEl = document.getElementById('weaponLabel');
 const scopeOverlayEl = document.getElementById('scopeOverlay');
 const tabListEl = document.getElementById('tabList');
 const tabListRowsEl = document.getElementById('tabListRows');
+const buyMenuEl = document.getElementById('buyMenu');
+const buyMenuGridEl = document.getElementById('buyMenuGrid');
 const botsToggle = document.getElementById('botsToggle');
 const nameInput = document.getElementById('nameInput');
 const onlineCountNum = document.getElementById('onlineCountNum');
@@ -575,6 +675,11 @@ const sensSlider = document.getElementById('sensSlider');
 const sensVal = document.getElementById('sensVal');
 const volSlider = document.getElementById('volSlider');
 const volVal = document.getElementById('volVal');
+const serverNameInput = document.getElementById('serverNameInput');
+const createBotsToggle = document.getElementById('createBotsToggle');
+const createServerBtn = document.getElementById('createServerBtn');
+const serverListEl = document.getElementById('serverList');
+const menuErrorEl = document.getElementById('menuError');
 
 // ----- tabs -----
 document.querySelectorAll('#menu .tabBtn').forEach(btn=>{
@@ -616,7 +721,7 @@ botsToggle.addEventListener('change', ()=>{
   localStorage.setItem('neonArenaBots', botsEnabled);
 });
 
-// ----- live online count -----
+// ----- live online count + server list -----
 async function pollOnlineCount(){
   try{
     const res = await fetch('/api/status');
@@ -626,24 +731,96 @@ async function pollOnlineCount(){
     onlineCountNum.textContent = '–';
   }
 }
+function renderServerList(list){
+  if(!list.length){
+    serverListEl.innerHTML = '<div class="serverListEmpty">No servers yet — create one above.</div>';
+    return;
+  }
+  serverListEl.innerHTML = list.map(r => `
+    <div class="serverRow">
+      <div>
+        <div class="srvName">${escapeHtml(r.name)}</div>
+        <div class="srvMeta">host: ${escapeHtml(r.hostName)} · ${r.playerCount} player${r.playerCount===1?'':'s'}</div>
+      </div>
+      <div class="srvBots">${r.botsEnabled ? 'BOTS ON' : 'BOTS OFF'}</div>
+      <button class="menuBtn small" data-room="${r.id}">JOIN</button>
+    </div>
+  `).join('');
+  serverListEl.querySelectorAll('button[data-room]').forEach(btn=>{
+    btn.addEventListener('click', ()=> joinServerRoom(btn.dataset.room));
+  });
+}
+async function pollServerList(){
+  try{
+    const res = await fetch('/api/rooms');
+    renderServerList(await res.json());
+  }catch(e){ /* leave list as-is if unreachable */ }
+}
 pollOnlineCount();
-setInterval(()=>{ if(!started) pollOnlineCount(); }, 4000);
+pollServerList();
+setInterval(()=>{ if(!started){ pollOnlineCount(); pollServerList(); } }, 3000);
 
-document.getElementById('playBtn').addEventListener('click', ()=>{
+function startGame(){
   started = true;
   menuEl.style.display = 'none';
   hudEl.style.display = 'block';
   renderer.domElement.requestPointerLock();
   initAudio();
-  const name = (nameInput.value || 'PLAYER').trim().slice(0,16) || 'PLAYER';
-  connectMultiplayer(name);
   bots.forEach(b=>{ b.group.visible = botsEnabled && b.alive; });
-  showTip('Hold E near a surface to grapple. Hold RIGHT CLICK to aim. 1-4 to switch weapons.', 7000);
+  showTip('Hold E to grapple, RIGHT CLICK to aim, B for loadout, TAB for roster.', 7000);
+}
+
+createServerBtn.addEventListener('click', ()=>{
+  const name = (nameInput.value || 'PLAYER').trim().slice(0,16) || 'PLAYER';
+  const serverName = (serverNameInput.value || '').trim().slice(0,24) || (name + "'S ARENA");
+  const wantBots = createBotsToggle.checked;
+  localName = name;
+  menuErrorEl.textContent = '';
+  ensureSocket();
+  if(!socket){ botsEnabled = wantBots; startGame(); return; }
+  socket.emit('createRoom', { name, serverName, botsEnabled: wantBots });
 });
+
+function joinServerRoom(roomId){
+  const name = (nameInput.value || 'PLAYER').trim().slice(0,16) || 'PLAYER';
+  localName = name;
+  menuErrorEl.textContent = '';
+  ensureSocket();
+  if(!socket){ menuErrorEl.textContent = 'No connection available right now.'; return; }
+  socket.emit('joinRoom', { roomId, name });
+}
 
 document.getElementById('resumeBtn').addEventListener('click', ()=>{
   renderer.domElement.requestPointerLock();
 });
+
+document.getElementById('leaveBtn').addEventListener('click', leaveToMenu);
+
+function leaveToMenu(){
+  if(socket){ socket.emit('leaveRoom'); socket.disconnect(); socket = null; }
+  currentRoomId = null;
+  Array.from(remotePlayers.keys()).forEach(id=> removeRemotePlayer(id));
+
+  started = false;
+  paused = false;
+  buyMenuOpen = false;
+  isDead = false;
+  kills = 0; deaths = 0;
+  playerHP = 100;
+  feetPos.copy(playerSpawns[0]);
+  velocity.set(0,0,0);
+  grapple.active = false;
+  if(grapple.line){ scene.remove(grapple.line); grapple.line = null; }
+
+  hudEl.style.display = 'none';
+  pauseEl.style.display = 'none';
+  buyMenuEl.classList.remove('show');
+  showTabList(false);
+  menuEl.style.display = 'flex';
+  document.exitPointerLock();
+  pollOnlineCount();
+  pollServerList();
+}
 
 document.addEventListener('pointerlockchange', ()=>{
   if(!started) return;
@@ -652,13 +829,41 @@ document.addEventListener('pointerlockchange', ()=>{
     pauseEl.style.display = 'none';
   } else {
     paused = true;
-    pauseEl.style.display = 'flex';
+    if(!buyMenuOpen) pauseEl.style.display = 'flex';
     mouseHeld = false;
     adsActive = false;
     endGrapple();
     showTabList(false);
   }
 });
+
+function openBuyMenu(){
+  buyMenuOpen = true;
+  populateBuyMenu();
+  buyMenuEl.classList.add('show');
+  document.exitPointerLock();
+}
+function closeBuyMenu(){
+  buyMenuOpen = false;
+  buyMenuEl.classList.remove('show');
+  renderer.domElement.requestPointerLock();
+}
+function populateBuyMenu(){
+  buyMenuGridEl.innerHTML = WEAPONS.map((w,i) => `
+    <div class="weaponCard${i===currentWeaponIndex?' equipped':''}" data-index="${i}">
+      <div class="wName">${w.name}${w.melee ? ' (MELEE)' : ''}</div>
+      <div class="wStats">${w.melee
+        ? `DMG ${w.damage} · RANGE ${w.range}`
+        : `DMG ${w.damage}${w.pellets>1?' x'+w.pellets:''} · ${w.automatic?'AUTO':'SEMI'} · RANGE ${w.range}`}</div>
+    </div>
+  `).join('');
+  buyMenuGridEl.querySelectorAll('.weaponCard').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      switchWeapon(parseInt(card.dataset.index, 10));
+      closeBuyMenu();
+    });
+  });
+}
 
 function showTip(text, dur){
   tipEl.textContent = text;
@@ -695,7 +900,8 @@ const sfx = {
   grapple: ()=> playTone(300,0.18,'sawtooth',0.04,900),
   botDeath: ()=> playTone(500,0.3,'sawtooth',0.05,90),
   hurt: ()=> playTone(140,0.15,'square',0.06,70),
-  pickup: ()=> playTone(700,0.12,'sine',0.06,1100)
+  pickup: ()=> playTone(700,0.12,'sine',0.06,1100),
+  swing: ()=> playTone(260,0.14,'sawtooth',0.05,90)
 };
 
 /* ============================================================
@@ -796,6 +1002,35 @@ function buildGunModel(type, scale){
     part(0.09,0.09,0.28, 0x0a0a12, 0,0.11,-0.02);          // scope body
     cyl(0.045,0.05, 0x0a0a12, 0,0.11,-0.17);               // scope lens ring
     part(0.13,0.015,0.85, 0x8b5cf6, 0,0.07,-0.10);         // top accent stripe
+  } else if(type === 'ar'){
+    part(0.11,0.12,0.55, dark, 0,0,-0.02);                 // body
+    part(0.07,0.07,0.28, 0x1a1a2a, 0,0.01,-0.36);          // shroud
+    cyl(0.022,0.28, 0x0a0a12, 0,0.01,-0.58);               // barrel
+    part(0.09,0.2,0.09, dark, 0,-0.16,0.14);               // grip
+    part(0.11,0.24,0.11, 0x1a1a2a, 0,-0.12,0.28);          // mag
+    part(0.08,0.06,0.16, dark, 0,-0.02,0.34);              // foregrip
+    part(0.06,0.14,0.22, dark, 0,-0.06,0.42);              // stock
+    part(0.14,0.02,0.55, 0x00fff2, 0,0.075,-0.02);         // top accent stripe
+  } else if(type === 'shotgun'){
+    part(0.13,0.13,0.5, dark, 0,0,0.02);                   // body
+    cyl(0.035,0.4, 0x0a0a12, 0,0.01,-0.32);                // wide barrel
+    part(0.11,0.09,0.28, 0x2a1a0a, 0,-0.03,0.02);          // pump/forend
+    part(0.10,0.18,0.10, dark, 0,-0.16,0.22);              // grip
+    part(0.08,0.10,0.20, dark, 0,-0.02,0.36);              // stock
+    part(0.15,0.02,0.45, 0xff6a00, 0,0.075,0.0);           // accent stripe
+  } else if(type === 'minigun'){
+    part(0.16,0.16,0.35, dark, 0,0,0.05);                  // body
+    cyl(0.02,0.55, 0x0a0a12, 0.05,0.02,-0.35);             // barrel 1
+    cyl(0.02,0.55, 0x0a0a12, -0.05,0.02,-0.35);            // barrel 2
+    cyl(0.02,0.55, 0x0a0a12, 0,0.07,-0.35);                // barrel 3
+    part(0.12,0.22,0.12, dark, 0,-0.18,0.2);               // grip/housing
+    part(0.18,0.03,0.4, 0xff2bd6, 0,0.1,0.05);             // accent stripe
+  } else if(type === 'sword'){
+    part(0.04,0.02,0.85, 0xcfd8ff, 0,0.05,-0.55);          // blade
+    part(0.045,0.005,0.85, 0x00fff2, 0,0.065,-0.55);       // energy-edge glow
+    part(0.18,0.03,0.05, 0x1a1a2a, 0,0,-0.12);             // crossguard
+    part(0.045,0.045,0.22, dark, 0,-0.01,0.05);            // handle
+    part(0.07,0.07,0.05, 0x8b5cf6, 0,-0.01,0.18);          // pommel
   } else { // blaster (default)
     part(0.11,0.11,0.55, dark, 0,0,0);                     // body
     part(0.06,0.06,0.42, 0x1a1a2a, 0,0.01,-0.42);          // barrel shroud
@@ -1094,7 +1329,7 @@ function updateRosterHUD(){
     name:p.name, color:'#'+new THREE.Color(p.colorHex).getHexString(), kills:p.kills, deaths:p.deaths
   }));
   rosterEl.innerHTML = rows.map(r=>
-    `<div class="rosterEntry" style="color:${r.color}">${r.name} — ${r.kills}/${r.deaths}</div>`
+    `<div class="rosterEntry" style="color:${r.color}">${escapeHtml(r.name)} — ${r.kills}/${r.deaths}</div>`
   ).join('');
 }
 
@@ -1117,27 +1352,34 @@ function populateTabList(){
   }
   rows.sort((a,b)=> b.sortKey - a.sortKey);
   tabListRowsEl.innerHTML = rows.map(r=>
-    `<div class="tabListRow"><span style="color:${r.color}">${r.name}</span><span class="role">${r.role}</span><span>${r.score}</span></div>`
+    `<div class="tabListRow"><span style="color:${r.color}">${escapeHtml(r.name)}</span><span class="role">${r.role}</span><span>${escapeHtml(String(r.score))}</span></div>`
   ).join('');
 }
 
-function connectMultiplayer(name){
-  localName = name;
+let currentRoomId = null;
+
+function ensureSocket(){
+  if(socket) return;
   if(typeof io === 'undefined') return; // socket.io client script failed to load; solo vs bots still works
   try{ socket = io(); }catch(e){ socket = null; return; }
 
   socket.on('connect', ()=>{ myId = socket.id; });
 
-  socket.emit('join', { name });
-
-  socket.on('roster', (list)=>{
-    list.forEach(p=>{
+  socket.on('roomJoined', (data)=>{
+    currentRoomId = data.roomId;
+    botsEnabled = data.botsEnabled;
+    data.roster.forEach(p=>{
       if(p.id === socket.id || remotePlayers.has(p.id)) return;
       const rp = makeRemotePlayer(p.id, p.name, p.color);
       rp.target.set(p.x,p.y,p.z); rp.targetYaw = p.yaw; rp.alive = p.alive;
       rp.pos.copy(rp.target);
     });
     updateRosterHUD();
+    startGame();
+  });
+
+  socket.on('joinError', (data)=>{
+    menuErrorEl.textContent = data.message || 'Could not join that server.';
   });
 
   socket.on('playerJoined', (p)=>{
@@ -1199,6 +1441,7 @@ function connectMultiplayer(name){
   });
 
   socket.on('disconnect', ()=>{
+    currentRoomId = null;
     Array.from(remotePlayers.keys()).forEach(id=> removeRemotePlayer(id));
   });
 }
@@ -1267,52 +1510,62 @@ function fireWeapon(){
   const weapon = WEAPONS[currentWeaponIndex];
   if(fireCooldownTimer > 0 || isDead) return;
   fireCooldownTimer = weapon.cooldown;
-  recoilPitch += weapon.kickPitch;
-  triggerGunRecoil(weapon);
-  triggerMuzzleFlash();
-  sfx.shoot();
 
-  const spread = adsActive ? weapon.adsSpread : weapon.spread;
-  const ndcX = (Math.random()-0.5)*spread*2;
-  const ndcY = (Math.random()-0.5)*spread*2;
-  shootRaycaster.setFromCamera({x:ndcX, y:ndcY}, camera);
+  if(weapon.melee){
+    triggerSwordSwing();
+    sfx.swing();
+  } else {
+    recoilPitch += weapon.kickPitch;
+    triggerGunRecoil(weapon);
+    triggerMuzzleFlash();
+    sfx.shoot();
+  }
+
   const remoteTargets = Array.from(remotePlayers.values()).filter(p=>p.alive).flatMap(p=>[p.body,p.head]);
   const targets = solidMeshes
     .concat(botsEnabled ? bots.filter(b=>b.alive).flatMap(b=>[b.body,b.head]) : [])
     .concat(remoteTargets);
-  const hits = shootRaycaster.intersectObjects(targets, false);
-
   const gunOffset = camera.position.clone().add(
     new THREE.Vector3(0.25,-0.2,0).applyQuaternion(camera.quaternion)
   );
 
-  if(hits.length){
-    const hit = hits[0];
-    spawnTracer(gunOffset, hit.point, 0x00fff2, 0.06);
-    spawnParticles(hit.point, 0x00fff2, 6, 2, 0.3);
-    const botRef = hit.object.userData.botRef;
-    const remoteRef = hit.object.userData.remoteRef;
-    if(botRef){
-      const headshot = !!hit.object.userData.isHead;
-      damageBot(botRef, headshot ? weapon.headshotDamage : weapon.damage, headshot);
-      showHitMarker(headshot);
-      sfx.hit();
-    } else if(remoteRef){
+  const pellets = weapon.pellets || 1;
+  for(let i=0; i<pellets; i++){
+    const spread = adsActive ? weapon.adsSpread : weapon.spread;
+    const ndcX = (Math.random()-0.5)*spread*2;
+    const ndcY = (Math.random()-0.5)*spread*2;
+    shootRaycaster.setFromCamera({x:ndcX, y:ndcY}, camera);
+    shootRaycaster.far = weapon.range || 300;
+    const hits = shootRaycaster.intersectObjects(targets, false);
+
+    if(hits.length){
+      const hit = hits[0];
+      spawnTracer(gunOffset, hit.point, 0x00fff2, 0.06);
+      spawnParticles(hit.point, 0x00fff2, pellets > 1 ? 3 : 6, 2, 0.3);
+      const botRef = hit.object.userData.botRef;
+      const remoteRef = hit.object.userData.remoteRef;
       const headshot = !!hit.object.userData.isHead;
       const dmg = headshot ? weapon.headshotDamage : weapon.damage;
-      if(socket) socket.emit('shotHit', { targetId: remoteRef.id, damage: dmg, headshot });
-      showHitMarker(headshot);
-      sfx.hit();
+      if(botRef){
+        damageBot(botRef, dmg, headshot);
+        showHitMarker(headshot);
+        sfx.hit();
+      } else if(remoteRef){
+        if(socket) socket.emit('shotHit', { targetId: remoteRef.id, damage: dmg, headshot });
+        showHitMarker(headshot);
+        sfx.hit();
+      }
+    } else {
+      const end = camera.position.clone().addScaledVector(shootRaycaster.ray.direction, weapon.range || 80);
+      spawnTracer(gunOffset, end, 0x00fff2, 0.05);
     }
-  } else {
-    const end = camera.position.clone().addScaledVector(shootRaycaster.ray.direction, 80);
-    spawnTracer(gunOffset, end, 0x00fff2, 0.06);
   }
 }
 
 function startGrapple(){
   if(grapple.cooldown > 0 || isDead) return;
   shootRaycaster.setFromCamera({x:0,y:0}, camera);
+  shootRaycaster.far = Infinity;
   const hits = shootRaycaster.intersectObjects(solidMeshes, false);
   if(hits.length && hits[0].distance <= GRAPPLE_MAX_RANGE){
     grapple.active = true;
@@ -1380,6 +1633,9 @@ function triggerMuzzleFlash(){
   muzzleFlashLife = 0.05;
   muzzleFlash.visible = true;
 }
+function triggerSwordSwing(){
+  swordSwingPhase = 0.25;
+}
 
 function updateGunViewmodel(dt){
   const weapon = WEAPONS[currentWeaponIndex];
@@ -1403,6 +1659,9 @@ function updateGunViewmodel(dt){
   gunRecoilOffset = THREE.MathUtils.lerp(gunRecoilOffset, 0, dt*10);
   gunRecoilPitchKick = THREE.MathUtils.lerp(gunRecoilPitchKick, 0, dt*10);
 
+  if(swordSwingPhase > 0) swordSwingPhase = Math.max(0, swordSwingPhase - dt);
+  const swingT = weapon.melee ? swordSwingPhase/0.25 : 0;
+
   const rest = weapon.restOffset;
   const restX = GUN_REST.x + rest.x, restY = GUN_REST.y + rest.y, restZ = GUN_REST.z + rest.z;
   const adsX = THREE.MathUtils.lerp(restX, -restX*0.15, adsBlend);
@@ -1410,11 +1669,15 @@ function updateGunViewmodel(dt){
   const adsZ = THREE.MathUtils.lerp(restZ, restZ + 0.22, adsBlend);
 
   gunGroup.position.set(
-    adsX + bobX + gunSwayYaw*0.05*(1-adsBlend),
+    adsX + bobX + gunSwayYaw*0.05*(1-adsBlend) - swingT*0.12,
     adsY + bobY + gunSwayPitch*0.05*(1-adsBlend),
-    adsZ + gunRecoilOffset
+    adsZ + gunRecoilOffset + swingT*0.15
   );
-  gunGroup.rotation.set(-gunRecoilPitchKick, Math.PI*0.06*(1-adsBlend) + gunSwayYaw*0.4*(1-adsBlend), gunSwayPitch*0.3*(1-adsBlend));
+  gunGroup.rotation.set(
+    -gunRecoilPitchKick,
+    Math.PI*0.06*(1-adsBlend) + gunSwayYaw*0.4*(1-adsBlend),
+    gunSwayPitch*0.3*(1-adsBlend) + swingT*1.4
+  );
 
   if(muzzleFlashLife > 0){
     muzzleFlashLife -= dt;
