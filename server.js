@@ -10,8 +10,9 @@ const io = new Server(httpServer);
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PLAYER_COLORS = [0x00fff2, 0xff5ecb, 0x7cff5e, 0xffb400, 0x5ecbff, 0xff5e5e, 0xc95eff, 0xffffff];
+const VALID_MAPS = ['arena', 'skybridge', 'canyon'];
 
-// rooms: roomId -> { id, name, hostName, botsEnabled, nextColorIdx, players: Map<socketId, player> }
+// rooms: roomId -> { id, name, hostName, botsEnabled, map, nextColorIdx, players: Map<socketId, player> }
 const rooms = new Map();
 
 function makeRoomId(){
@@ -21,7 +22,7 @@ function makeRoomId(){
 }
 
 function roomSummary(room){
-  return { id: room.id, name: room.name, hostName: room.hostName, playerCount: room.players.size, botsEnabled: room.botsEnabled };
+  return { id: room.id, name: room.name, hostName: room.hostName, playerCount: room.players.size, botsEnabled: room.botsEnabled, map: room.map };
 }
 
 app.get('/api/status', (req, res) => {
@@ -61,12 +62,13 @@ io.on('connection', (socket) => {
     const name = (typeof data?.name === 'string' ? data.name : 'PLAYER').slice(0, 20) || 'PLAYER';
     const serverName = (typeof data?.serverName === 'string' ? data.serverName : "PLAYER'S ARENA").slice(0, 24) || "PLAYER'S ARENA";
     const botsEnabled = data?.botsEnabled !== false;
+    const map = VALID_MAPS.includes(data?.map) ? data.map : 'arena';
 
-    const room = { id: makeRoomId(), name: serverName, hostName: name, botsEnabled, nextColorIdx: 0, players: new Map() };
+    const room = { id: makeRoomId(), name: serverName, hostName: name, botsEnabled, map, nextColorIdx: 0, players: new Map() };
     rooms.set(room.id, room);
     const player = addPlayerToRoom(room, socket, name);
 
-    socket.emit('roomJoined', { roomId: room.id, roomName: room.name, botsEnabled: room.botsEnabled, roster: Array.from(room.players.values()) });
+    socket.emit('roomJoined', { roomId: room.id, roomName: room.name, botsEnabled: room.botsEnabled, map: room.map, roster: Array.from(room.players.values()) });
   });
 
   socket.on('joinRoom', (data) => {
@@ -76,7 +78,7 @@ io.on('connection', (socket) => {
     const name = (typeof data?.name === 'string' ? data.name : 'PLAYER').slice(0, 20) || 'PLAYER';
 
     const player = addPlayerToRoom(room, socket, name);
-    socket.emit('roomJoined', { roomId: room.id, roomName: room.name, botsEnabled: room.botsEnabled, roster: Array.from(room.players.values()) });
+    socket.emit('roomJoined', { roomId: room.id, roomName: room.name, botsEnabled: room.botsEnabled, map: room.map, roster: Array.from(room.players.values()) });
     socket.to(room.id).emit('playerJoined', player);
   });
 

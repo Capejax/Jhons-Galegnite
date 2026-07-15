@@ -57,6 +57,8 @@
   }
   .menuBtn:hover{ transform:translateY(-2px); box-shadow:0 0 30px rgba(0,255,242,0.6); }
   .menuBtn.small{ padding:7px 16px; font-size:0.78rem; }
+  .mapBtn{ opacity:0.55; }
+  .mapBtn.active{ opacity:1; border-color:var(--amber); box-shadow:0 0 18px rgba(255,204,0,0.5); color:var(--amber); }
   #controlsList{
     margin-top:28px; text-align:left; font-size:0.92rem; line-height:1.7;
     color:#b9e9ff; border-top:1px solid rgba(255,255,255,0.12); padding-top:18px;
@@ -122,8 +124,6 @@
   .settingRow label span:last-child{ color:var(--amber); }
   .settingRow input[type=range]{ width:100%; accent-color:#00fff2; height:4px; cursor:pointer; }
 
-  .toggleRow{ display:flex; align-items:center; justify-content:space-between; margin-bottom:0; }
-  .toggleLabel span{ font-size:0.78rem; letter-spacing:1.5px; color:#b9e9ff; }
   .switch{ position:relative; display:inline-block; width:46px; height:24px; cursor:pointer; flex-shrink:0; }
   .switch input{ opacity:0; width:0; height:0; position:absolute; }
   .switchTrack{ position:absolute; inset:0; background:rgba(255,255,255,0.08); border:1px solid rgba(0,255,242,0.35); border-radius:24px; transition:.2s; }
@@ -155,6 +155,8 @@
 
   /* ===== HUD ===== */
   #hud{ position:fixed; inset:0; z-index:10; pointer-events:none; display:none; font-family:'Chakra Petch',sans-serif; }
+
+  #speedLinesCanvas{ position:absolute; inset:0; width:100%; height:100%; }
 
   #crosshair{
     position:absolute; top:50%; left:50%; width:40px; height:40px; transform:translate(-50%,-50%);
@@ -192,6 +194,14 @@
   #hitMarker::after{ top:11px; left:0; height:3px; width:26px; box-shadow:0 0 8px currentColor; }
   #hitMarker.show{ animation:hitFlash 0.28s ease-out; }
   @keyframes hitFlash{ 0%{ opacity:1; transform:translate(-50%,-50%) rotate(45deg) scale(1.5);} 100%{ opacity:0; transform:translate(-50%,-50%) rotate(45deg) scale(1);} }
+  #hitMarker.show.headshot{ animation:hitFlashCrit 0.38s ease-out; width:34px; height:34px; }
+  #hitMarker.headshot::before{ left:15px; width:4px; height:34px; }
+  #hitMarker.headshot::after{ top:15px; height:4px; width:34px; }
+  @keyframes hitFlashCrit{
+    0%{ opacity:1; transform:translate(-50%,-50%) rotate(45deg) scale(2.4); }
+    35%{ opacity:1; transform:translate(-50%,-50%) rotate(45deg) scale(1.05); }
+    100%{ opacity:0; transform:translate(-50%,-50%) rotate(45deg) scale(1); }
+  }
 
   #damageFlash{ position:absolute; inset:0; background:radial-gradient(circle, transparent 40%, rgba(255,20,20,0.0) 100%); opacity:0; }
   #damageFlash.flash{ animation:dmgFlash 0.5s ease-out; }
@@ -320,6 +330,16 @@
         <label for="nameInput">CALLSIGN</label>
         <input id="nameInput" type="text" maxlength="16" autocomplete="off" spellcheck="false" />
       </div>
+
+      <div id="mapRow" style="margin-bottom:18px; text-align:center;">
+        <label style="display:block; font-size:0.72rem; letter-spacing:2px; color:#7fa0ad; margin-bottom:8px;">MAP</label>
+        <div id="mapButtons" style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
+          <button type="button" class="menuBtn small mapBtn active" data-map="arena">ARENA</button>
+          <button type="button" class="menuBtn small mapBtn" data-map="skybridge">SKYBRIDGE</button>
+          <button type="button" class="menuBtn small mapBtn" data-map="canyon">CANYON</button>
+        </div>
+      </div>
+
       <div id="onlineCount"><span class="dot"></span><b id="onlineCountNum">–</b> ONLINE NOW</div>
 
       <div id="createServerBox">
@@ -350,12 +370,9 @@
         <label><span>VOLUME</span><span id="volVal">100%</span></label>
         <input type="range" id="volSlider" min="0" max="1.5" step="0.05" value="1" />
       </div>
-      <div class="settingRow toggleRow">
-        <label class="toggleLabel"><span>AI BOTS</span></label>
-        <label class="switch">
-          <input type="checkbox" id="botsToggle" checked />
-          <span class="switchTrack"></span>
-        </label>
+      <div class="settingRow">
+        <label><span>BOTS</span><span id="botsVal">HARD</span></label>
+        <input type="range" id="botsSlider" min="0" max="3" step="1" value="3" />
       </div>
     </div>
 
@@ -385,6 +402,7 @@
 </div>
 
 <div id="hud">
+  <canvas id="speedLinesCanvas"></canvas>
   <div id="crosshair"></div>
   <div id="centerReticleHint"></div>
   <div id="hitMarker"></div>
@@ -511,62 +529,251 @@ const COL = {
   tower: 0x1a0a2e, towerEdge: 0x8b5cf6,
   plat: 0x0a1420, platEdge: 0x00fff2
 };
+const COL_SKY = {
+  floor: 0x0a1428, floorEdge: 0xff6a00,
+  wall: 0x0a1030, wallEdge: 0x00fff2,
+  cover: 0x0a1420, coverEdge: 0xff6a00,
+  tower: 0x1a0a2e, towerEdge: 0xff2bd6,
+  plat: 0x0e1830, platEdge: 0xffcc00
+};
+const COL_CANYON = {
+  floor: 0x1a0e08, floorEdge: 0xffcc00,
+  wall: 0x1a0805, wallEdge: 0xff3b3b,
+  cover: 0x140a1c, coverEdge: 0x8b5cf6,
+  tower: 0x1a0a2e, towerEdge: 0x8b5cf6,
+  plat: 0x140e08, platEdge: 0xff6a00
+};
 
-// floor slabs surrounding a central pit (pit spans x/z -10..10)
-addBlock(0, -0.5, 25,  80, 1, 30, COL.floor, COL.floorEdge);   // north
-addBlock(0, -0.5, -25, 80, 1, 30, COL.floor, COL.floorEdge);   // south
-addBlock(25, -0.5, 0,  30, 1, 20, COL.floor, COL.floorEdge);   // east
-addBlock(-25,-0.5, 0,  30, 1, 20, COL.floor, COL.floorEdge);   // west
+let currentGridHelper = null;
+function addGridFloor(size, divisions, lineColor){
+  currentGridHelper = new THREE.GridHelper(size, divisions, lineColor||0x1c3d55, 0x101a2c);
+  currentGridHelper.position.y = 0.02;
+  scene.add(currentGridHelper);
+}
 
-// perimeter walls (wall-run surfaces)
-addBlock(0, 6, 40.5, 82, 14, 1, COL.wall, COL.wallEdge);
-addBlock(0, 6, -40.5,82, 14, 1, COL.wall, COL.wallEdge);
-addBlock(40.5, 6, 0, 1, 14, 82, COL.wall, COL.wallEdge);
-addBlock(-40.5,6, 0, 1, 14, 82, COL.wall, COL.wallEdge);
+function clearMapGeometry(){
+  for(let i=solidMeshes.length-1;i>=0;i--){
+    const m = solidMeshes[i];
+    scene.remove(m);
+    m.children.forEach(c=>{ if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); });
+    m.geometry.dispose(); m.material.dispose();
+  }
+  solidMeshes.length = 0;
+  solidBoxes.length = 0;
+  pickups.forEach(p=>{
+    scene.remove(p.mesh);
+    p.mesh.children.forEach(c=>{ if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); });
+    p.mesh.geometry.dispose(); p.mesh.material.dispose();
+  });
+  pickups.length = 0;
+  if(currentGridHelper){ scene.remove(currentGridHelper); currentGridHelper.geometry.dispose(); currentGridHelper.material.dispose(); currentGridHelper = null; }
+}
 
-// pit walls (danger drop, also wall-runnable edges)
-addBlock(10.5, -7, 0, 1, 15, 20.5, COL.pit, COL.pitEdge);
-addBlock(-10.5,-7, 0, 1, 15, 20.5, COL.pit, COL.pitEdge);
-addBlock(0, -7, 10.5, 20.5, 15, 1, COL.pit, COL.pitEdge);
-addBlock(0, -7, -10.5,20.5, 15, 1, COL.pit, COL.pitEdge);
+/* ---- MAP: NEON ARENA — symmetric open arena, central pit + tall sniper tower ---- */
+function buildArenaMap(){
+  // floor slabs surrounding a central pit (pit spans x/z -10..10)
+  addBlock(0, -0.5, 25,  80, 1, 30, COL.floor, COL.floorEdge);   // north
+  addBlock(0, -0.5, -25, 80, 1, 30, COL.floor, COL.floorEdge);   // south
+  addBlock(25, -0.5, 0,  30, 1, 20, COL.floor, COL.floorEdge);   // east
+  addBlock(-25,-0.5, 0,  30, 1, 20, COL.floor, COL.floorEdge);   // west
 
-// stepping platforms across the pit
-addBlock(-5.5, 1, -5.5, 4.5, 1, 4.5, COL.plat, COL.platEdge);
-addBlock(5.5, 1, 5.5, 4.5, 1, 4.5, COL.plat, COL.platEdge);
-// central tower (now a tall sniping perch)
-addBlock(0, 3, 0, 4.5, 1, 4.5, COL.tower, COL.towerEdge);
-addBlock(0, 14.5, 0, 2, 23, 2, COL.tower, COL.towerEdge);
-addBlock(0, 26, 0, 3.2, 1, 3.2, COL.plat, COL.platEdge);
+  // perimeter walls (wall-run surfaces)
+  addBlock(0, 6, 40.5, 82, 14, 1, COL.wall, COL.wallEdge);
+  addBlock(0, 6, -40.5,82, 14, 1, COL.wall, COL.wallEdge);
+  addBlock(40.5, 6, 0, 1, 14, 82, COL.wall, COL.wallEdge);
+  addBlock(-40.5,6, 0, 1, 14, 82, COL.wall, COL.wallEdge);
 
-// cover pillars
-const pillarPositions = [
-  [20,4,20],[-20,4,20],[20,4,-20],[-20,4,-20],
-  [0,4,30],[0,4,-30],[30,4,0],[-30,4,0]
-];
-pillarPositions.forEach(p=> addBlock(p[0],p[1],p[2], 3,8,3, COL.cover, COL.coverEdge));
+  // pit walls (danger drop, also wall-runnable edges)
+  addBlock(10.5, -7, 0, 1, 15, 20.5, COL.pit, COL.pitEdge);
+  addBlock(-10.5,-7, 0, 1, 15, 20.5, COL.pit, COL.pitEdge);
+  addBlock(0, -7, 10.5, 20.5, 15, 1, COL.pit, COL.pitEdge);
+  addBlock(0, -7, -10.5,20.5, 15, 1, COL.pit, COL.pitEdge);
 
-// extra sniper-nest towers with platforms
-addBlock(15, 10, -15, 3, 20, 3, COL.tower, COL.towerEdge);
-addBlock(15, 20.5, -15, 4, 1, 4, COL.plat, COL.platEdge);
-addBlock(-15, 10, 15, 3, 20, 3, COL.tower, COL.towerEdge);
-addBlock(-15, 20.5, 15, 4, 1, 4, COL.plat, COL.platEdge);
+  // stepping platforms across the pit
+  addBlock(-5.5, 1, -5.5, 4.5, 1, 4.5, COL.plat, COL.platEdge);
+  addBlock(5.5, 1, 5.5, 4.5, 1, 4.5, COL.plat, COL.platEdge);
+  // central tower (tall sniping perch)
+  addBlock(0, 3, 0, 4.5, 1, 4.5, COL.tower, COL.towerEdge);
+  addBlock(0, 14.5, 0, 2, 23, 2, COL.tower, COL.towerEdge);
+  addBlock(0, 26, 0, 3.2, 1, 3.2, COL.plat, COL.platEdge);
 
-// raised corner platforms
-addBlock(30,6,-30, 8,1,8, COL.plat, COL.platEdge);
-addBlock(-30,6,30, 8,1,8, COL.plat, COL.platEdge);
+  // cover pillars
+  [[20,4,20],[-20,4,20],[20,4,-20],[-20,4,-20],[0,4,30],[0,4,-30],[30,4,0],[-30,4,0]]
+    .forEach(p=> addBlock(p[0],p[1],p[2], 3,8,3, COL.cover, COL.coverEdge));
 
-// extra scattered cover obstacles
-addBlock(12, 1.5, 4, 3, 3, 3, COL.cover, COL.coverEdge);
-addBlock(-12, 1.5, -4, 3, 3, 3, COL.cover, COL.coverEdge);
-addBlock(4, 1.5, -12, 3, 3, 3, COL.cover, COL.coverEdge);
-addBlock(-4, 1.5, 12, 3, 3, 3, COL.cover, COL.coverEdge);
-addBlock(0, 1.5, -20, 5, 3, 2, COL.cover, COL.coverEdge);
-addBlock(0, 1.5, 20, 5, 3, 2, COL.cover, COL.coverEdge);
+  // extra sniper-nest towers with platforms
+  addBlock(15, 10, -15, 3, 20, 3, COL.tower, COL.towerEdge);
+  addBlock(15, 20.5, -15, 4, 1, 4, COL.plat, COL.platEdge);
+  addBlock(-15, 10, 15, 3, 20, 3, COL.tower, COL.towerEdge);
+  addBlock(-15, 20.5, 15, 4, 1, 4, COL.plat, COL.platEdge);
 
-// thin grid floor accent lines for tron-ish ground detail
-const gridHelper = new THREE.GridHelper(80, 40, 0x1c3d55, 0x101a2c);
-gridHelper.position.y = 0.02;
-scene.add(gridHelper);
+  // raised corner platforms
+  addBlock(30,6,-30, 8,1,8, COL.plat, COL.platEdge);
+  addBlock(-30,6,30, 8,1,8, COL.plat, COL.platEdge);
+
+  // extra scattered cover obstacles
+  addBlock(12, 1.5, 4, 3, 3, 3, COL.cover, COL.coverEdge);
+  addBlock(-12, 1.5, -4, 3, 3, 3, COL.cover, COL.coverEdge);
+  addBlock(4, 1.5, -12, 3, 3, 3, COL.cover, COL.coverEdge);
+  addBlock(-4, 1.5, 12, 3, 3, 3, COL.cover, COL.coverEdge);
+  addBlock(0, 1.5, -20, 5, 3, 2, COL.cover, COL.coverEdge);
+  addBlock(0, 1.5, 20, 5, 3, 2, COL.cover, COL.coverEdge);
+
+  addGridFloor(80, 40, 0x1c3d55);
+
+  return {
+    playerSpawns: [ new THREE.Vector3(0,1,-35), new THREE.Vector3(0,1,35), new THREE.Vector3(35,1,0), new THREE.Vector3(-35,1,0) ],
+    botSpawns: [ new THREE.Vector3(25,1,0), new THREE.Vector3(-25,1,0), new THREE.Vector3(0,1,25), new THREE.Vector3(0,1,-25), new THREE.Vector3(30,6.6,-30), new THREE.Vector3(-30,6.6,30) ],
+    wanderPool: [
+      new THREE.Vector3(20,0,20), new THREE.Vector3(-20,0,20), new THREE.Vector3(20,0,-20), new THREE.Vector3(-20,0,-20),
+      new THREE.Vector3(0,0,32), new THREE.Vector3(0,0,-32), new THREE.Vector3(32,0,0), new THREE.Vector3(-32,0,0),
+      new THREE.Vector3(15,0,0), new THREE.Vector3(-15,0,0), new THREE.Vector3(0,0,15), new THREE.Vector3(0,0,-15)
+    ],
+    pickupSpecs: [[20,8.9,20],[-20,8.9,-20],[0,14.9,0],[30,7.9,-30],[-30,7.9,30]]
+  };
+}
+
+/* ---- MAP: SKYBRIDGE SPIRE — open ground floor rising through 3 climbable tiers to a sniper crown ---- */
+function buildSkybridgeMap(){
+  const C = COL_SKY;
+
+  // open ground floor, no pit
+  addBlock(0, -0.5, 0, 70, 1, 70, C.floor, C.floorEdge);
+
+  // perimeter walls (tall, wall-run surfaces)
+  addBlock(0, 8, 35.5, 70, 16, 1, C.wall, C.wallEdge);
+  addBlock(0, 8, -35.5,70, 16, 1, C.wall, C.wallEdge);
+  addBlock(35.5, 8, 0, 1, 16, 70, C.wall, C.wallEdge);
+  addBlock(-35.5,8, 0, 1, 16, 70, C.wall, C.wallEdge);
+
+  // stepping stones up to the first ring
+  addBlock(0, 0.8, -6,  3, 1.6, 3, C.plat, C.platEdge);
+  addBlock(0, 2.4, -3,  3, 1.6, 3, C.plat, C.platEdge);
+  addBlock(0, 4.0, 0,   3, 1.6, 3, C.plat, C.platEdge);
+  // first ring platform
+  addBlock(0, 5.6, 4, 20, 1.6, 12, C.tower, C.towerEdge);
+
+  // stepping stones up to the second ring, offset to a different approach
+  addBlock(2, 7.2, 4,  3, 1.6, 3, C.plat, C.platEdge);
+  addBlock(2, 8.8, 7,  3, 1.6, 3, C.plat, C.platEdge);
+  addBlock(2, 10.4,10, 3, 1.6, 3, C.plat, C.platEdge);
+  // second ring platform
+  addBlock(0, 12.0, 12, 12, 1.6, 8, C.tower, C.towerEdge);
+
+  // final stair to the crown
+  addBlock(0, 13.6, 15, 2.4, 1.6, 2.4, C.plat, C.platEdge);
+  addBlock(0, 15.2, 16.5, 2.4, 1.6, 2.4, C.plat, C.platEdge);
+  addBlock(0, 16.8, 17.5, 6, 1.6, 6, C.tower, C.towerEdge); // crown sniper perch
+
+  // two flanking bridges off the first ring, crossing back down toward the side walls
+  addBlock(-14, 5.6, 4, 16, 1.2, 2.4, C.plat, C.platEdge);
+  addBlock(14, 5.6, 4,  16, 1.2, 2.4, C.plat, C.platEdge);
+  addBlock(-28, 4.4, 4, 8, 1, 8, C.plat, C.platEdge);  // west landing platform
+  addBlock(28, 4.4, 4,  8, 1, 8, C.plat, C.platEdge);  // east landing platform
+
+  // ground-level cover
+  [[16,3,-20],[-16,3,-20],[16,3,20],[-16,3,20],[-24,3,-24],[24,3,-24]]
+    .forEach(p=> addBlock(p[0],p[1],p[2], 3,6,3, C.cover, C.coverEdge));
+  addBlock(0, 1.5, -24, 8, 3, 2, C.cover, C.coverEdge);
+  addBlock(0, 1.5, 24, 8, 3, 2, C.cover, C.coverEdge);
+
+  addGridFloor(70, 35, 0x2a1c10);
+
+  return {
+    playerSpawns: [ new THREE.Vector3(30,1,-30), new THREE.Vector3(-30,1,-30), new THREE.Vector3(30,1,30), new THREE.Vector3(-30,1,30) ],
+    botSpawns: [ new THREE.Vector3(0,1,-28), new THREE.Vector3(0,1,28), new THREE.Vector3(28,1,0), new THREE.Vector3(-28,1,0), new THREE.Vector3(16,1,-20), new THREE.Vector3(-16,1,20) ],
+    wanderPool: [
+      new THREE.Vector3(0,0,-28), new THREE.Vector3(0,0,28), new THREE.Vector3(28,0,0), new THREE.Vector3(-28,0,0),
+      new THREE.Vector3(16,0,-20), new THREE.Vector3(-16,0,-20), new THREE.Vector3(16,0,20), new THREE.Vector3(-16,0,20),
+      new THREE.Vector3(0,0,-32), new THREE.Vector3(0,0,32), new THREE.Vector3(-32,0,0), new THREE.Vector3(32,0,0)
+    ],
+    pickupSpecs: [[16,3.9,-20],[-16,3.9,20],[0,7.3,4],[0,18.7,17.5],[-28,5.3,4]]
+  };
+}
+
+/* ---- MAP: CROSSFIRE CANYON — long narrow sightlines, zigzag chokepoints, side sniper ledges ---- */
+function buildCanyonMap(){
+  const C = COL_CANYON;
+
+  // long canyon floor
+  addBlock(0, -0.5, 0, 26, 1, 110, C.floor, C.floorEdge);
+
+  // tall canyon walls (wall-run surfaces)
+  addBlock(0, 10, 55.5, 26, 20, 1, C.wall, C.wallEdge);
+  addBlock(0, 10, -55.5,26, 20, 1, C.wall, C.wallEdge);
+  addBlock(13.5, 10, 0, 1, 20, 110, C.wall, C.wallEdge);
+  addBlock(-13.5,10, 0, 1, 20, 110, C.wall, C.wallEdge);
+
+  // zigzag chicane cover jutting from alternating walls
+  addBlock(-9, 3, -35, 8, 6, 2.4, C.cover, C.coverEdge);
+  addBlock(9,  3, -18, 8, 6, 2.4, C.cover, C.coverEdge);
+  addBlock(-9, 3, -1,  8, 6, 2.4, C.cover, C.coverEdge);
+  addBlock(9,  3, 16,  8, 6, 2.4, C.cover, C.coverEdge);
+  addBlock(-9, 3, 33,  8, 6, 2.4, C.cover, C.coverEdge);
+
+  // west-side sniper ledge, two tiers, reached by a stair near the south end
+  addBlock(-8, 1.0, -50, 3,2,3, C.plat, C.platEdge);
+  addBlock(-8, 3.0, -47, 3,2,3, C.plat, C.platEdge);
+  addBlock(-10, 5.0, 0, 3, 1, 90, C.tower, C.towerEdge);       // low west ledge
+  addBlock(-8, 6.6, -44, 3,2,3, C.plat, C.platEdge);
+  addBlock(-8, 8.6, -41, 3,2,3, C.plat, C.platEdge);
+  addBlock(-10.5, 10.5, 0, 2.4, 1, 60, C.tower, C.towerEdge);  // high west ledge
+
+  // east-side sniper ledge, mirrored, reached near the north end
+  addBlock(8, 1.0, 50, 3,2,3, C.plat, C.platEdge);
+  addBlock(8, 3.0, 47, 3,2,3, C.plat, C.platEdge);
+  addBlock(10, 5.0, 0, 3, 1, 90, C.tower, C.towerEdge);
+  addBlock(8, 6.6, 44, 3,2,3, C.plat, C.platEdge);
+  addBlock(8, 8.6, 41, 3,2,3, C.plat, C.platEdge);
+  addBlock(10.5, 10.5, 0, 2.4, 1, 60, C.tower, C.towerEdge);
+
+  // mid-canyon crossing bridge linking both high ledges, with its own stair from the ground
+  addBlock(0, 11, 0, 20, 1, 3, C.tower, C.towerEdge);
+  addBlock(0, 1.0, 4, 3,2,3, C.plat, C.platEdge);
+  addBlock(0, 3.0, 6, 3,2,3, C.plat, C.platEdge);
+  addBlock(0, 5.0, 8, 3,2,3, C.plat, C.platEdge);
+  addBlock(0, 7.0, 8, 3,2,3, C.plat, C.platEdge);
+  addBlock(0, 9.0, 6, 3,2,3, C.plat, C.platEdge);
+
+  addGridFloor(110, 44, 0x2a1408);
+
+  return {
+    playerSpawns: [ new THREE.Vector3(0,1,-50), new THREE.Vector3(0,1,50), new THREE.Vector3(-6,1,0), new THREE.Vector3(6,1,0) ],
+    botSpawns: [ new THREE.Vector3(0,1,-40), new THREE.Vector3(0,1,40), new THREE.Vector3(-6,1,-20), new THREE.Vector3(6,1,20), new THREE.Vector3(0,1,-10), new THREE.Vector3(0,1,10) ],
+    wanderPool: [
+      new THREE.Vector3(-5,0,-45), new THREE.Vector3(5,0,-30), new THREE.Vector3(-5,0,-15), new THREE.Vector3(5,0,0),
+      new THREE.Vector3(-5,0,15), new THREE.Vector3(5,0,30), new THREE.Vector3(-5,0,45), new THREE.Vector3(0,0,0),
+      new THREE.Vector3(0,0,-25), new THREE.Vector3(0,0,25)
+    ],
+    pickupSpecs: [[0,1.4,-40],[0,1.4,40],[0,12.4,0],[-8,10.0,-41],[8,10.0,41]]
+  };
+}
+
+const MAPS = {
+  arena:     { name:'NEON ARENA',       build: buildArenaMap },
+  skybridge: { name:'SKYBRIDGE SPIRE',  build: buildSkybridgeMap },
+  canyon:    { name:'CROSSFIRE CANYON', build: buildCanyonMap }
+};
+let currentMapId = 'arena';
+
+function loadMap(mapId){
+  if(!MAPS[mapId]) mapId = 'arena';
+  clearMapGeometry();
+  const data = MAPS[mapId].build();
+  currentMapId = mapId;
+  playerSpawns.length = 0; data.playerSpawns.forEach(p=> playerSpawns.push(p));
+  botSpawns.length = 0; data.botSpawns.forEach(p=> botSpawns.push(p));
+  wanderPool.length = 0; data.wanderPool.forEach(p=> wanderPool.push(p));
+  data.pickupSpecs.forEach(([x,y,z])=> addPickup(x,y,z));
+  feetPos.copy(playerSpawns[0]);
+  bots.forEach((b,i)=>{
+    b.hp = b.maxHp; b.alive = true;
+    b.hpFill.scale.x = 1; b.hpFill.position.x = 0;
+    b.state = 'wander'; b.wanderTarget = null;
+    placeBot(b, botSpawns[i % botSpawns.length]);
+    b.group.visible = botsEnabled;
+  });
+}
 
 /* ============================================================
    PICKUPS (health packs)
@@ -582,11 +789,6 @@ function addPickup(x,y,z){
   scene.add(mesh);
   pickups.push({ mesh, base:y, active:true, cooldown:0, seed:Math.random()*10 });
 }
-addPickup(20, 8.9, 20);
-addPickup(-20, 8.9, -20);
-addPickup(0, 14.9, 0);
-addPickup(30, 7.9, -30);
-addPickup(-30, 7.9, 30);
 
 /* ============================================================
    PLAYER STATE
@@ -606,7 +808,7 @@ const WEAPONS = [
   { id:'ar',      name:'ASSAULT RIFLE',  damage:20, headshotDamage:38,  cooldown:0.11,  spread:0.018, adsSpread:0.007,  automatic:true,  pellets:1, range:250, adsZoom:0.82, moveMultAds:1,    recoil:0.06, kickPitch:0.010, adsSensitivity:0.55, restOffset:new THREE.Vector3(0,0.01,0.03) },
   { id:'shotgun', name:'SHOTGUN',        damage:9,  headshotDamage:15,  cooldown:0.75,  spread:0.05,  adsSpread:0.03,   automatic:false, pellets:8, range:40,  adsZoom:0.95, moveMultAds:0.9,  recoil:0.28, kickPitch:0.05,  adsSensitivity:0.65, restOffset:new THREE.Vector3(0.03,-0.03,0.05) },
   { id:'minigun', name:'MINIGUN',        damage:10, headshotDamage:16,  cooldown:0.045, spread:0.05,  adsSpread:0.03,   automatic:true,  pellets:1, range:200, adsZoom:0.9,  moveMultAds:0.6,  recoil:0.03, kickPitch:0.006, adsSensitivity:0.6,  restOffset:new THREE.Vector3(0,-0.02,0.15) },
-  { id:'sword',   name:'SWORD',          damage:55, headshotDamage:90,  cooldown:0.5,   spread:0,     adsSpread:0,      automatic:false, pellets:1, range:2.6, adsZoom:1,    moveMultAds:1,    recoil:0,    kickPitch:0,     adsSensitivity:1,    restOffset:new THREE.Vector3(0,-0.02,0.05), melee:true },
+  { id:'sword',   name:'SWORD',          damage:60, headshotDamage:100, cooldown:0.42,  spread:0,     adsSpread:0,      automatic:false, pellets:1, range:3.4, adsZoom:1,    moveMultAds:1,    recoil:0,    kickPitch:0,     adsSensitivity:1,    restOffset:new THREE.Vector3(0,-0.02,0.05), melee:true, meleeConeDeg:42 },
   { id:'rpg',     name:'RPG',            damage:90, headshotDamage:90,  cooldown:1.8,   spread:0.004, adsSpread:0.002,  automatic:false, pellets:1, range:120, adsZoom:0.85, moveMultAds:0.8,  recoil:0.3,  kickPitch:0.05,  adsSensitivity:0.55, restOffset:new THREE.Vector3(0.05,-0.05,0.1), projectile:true, projectileSpeed:45, splashRadius:6 }
 ];
 let currentWeaponIndex = 0;
@@ -616,8 +818,8 @@ let swordSwingPhase = 0;
 const feetPos = new THREE.Vector3(0,1,-35);
 const velocity = new THREE.Vector3(0,0,0);
 let yaw = Math.PI, pitch = 0;
-let grounded = false, jumpsUsed = 0;
-let sliding = false, slideTimer = 0, slideCooldown = 0, slideSpeed = 0;
+let grounded = false, jumpsUsed = 0, wasGroundedPrev = false;
+let sliding = false, slideTimer = 0, slideCooldown = 0, slideSpeed = 0, slideDustTimer = 0;
 const slideDir = new THREE.Vector3();
 let wallRunning = false, wallRunTimer = 0, wallJumpLock = 0;
 const wallNormal = new THREE.Vector3();
@@ -626,6 +828,7 @@ let spaceHeldPrev = false;
 let recoilPitch = 0;
 let camRoll = 0;
 let shakeAmount = 0;
+let hitStopTimer = 0;
 
 const grapple = { active:false, point:new THREE.Vector3(), elapsed:0, cooldown:0, line:null };
 
@@ -634,11 +837,9 @@ let isDead = false, respawnTimer = 0;
 let started = false, paused = false;
 let mouseSensitivity = 1, masterVolume = 1;
 let botsEnabled = true;
+let botDifficulty = 'medium';
 
-const playerSpawns = [
-  new THREE.Vector3(0,1,-35), new THREE.Vector3(0,1,35),
-  new THREE.Vector3(35,1,0), new THREE.Vector3(-35,1,0)
-];
+let playerSpawns = [];
 
 /* ============================================================
    INPUT
@@ -708,7 +909,9 @@ const tabListEl = document.getElementById('tabList');
 const tabListRowsEl = document.getElementById('tabListRows');
 const buyMenuEl = document.getElementById('buyMenu');
 const buyMenuGridEl = document.getElementById('buyMenuGrid');
-const botsToggle = document.getElementById('botsToggle');
+const botsSlider = document.getElementById('botsSlider');
+const botsVal = document.getElementById('botsVal');
+const mapButtons = document.querySelectorAll('.mapBtn');
 const nameInput = document.getElementById('nameInput');
 const onlineCountNum = document.getElementById('onlineCountNum');
 const sensSlider = document.getElementById('sensSlider');
@@ -753,12 +956,32 @@ volSlider.addEventListener('input', ()=>{
   localStorage.setItem('neonArenaVol', masterVolume);
 });
 
-// ----- bots toggle -----
-botsEnabled = localStorage.getItem('neonArenaBots') !== 'false';
-botsToggle.checked = botsEnabled;
-botsToggle.addEventListener('change', ()=>{
-  botsEnabled = botsToggle.checked;
-  localStorage.setItem('neonArenaBots', botsEnabled);
+// ----- bot difficulty slider (off / easy / medium / hard) -----
+const BOT_DIFFICULTY_LEVELS = ['off','easy','medium','hard'];
+botDifficulty = localStorage.getItem('neonArenaBotDifficulty') || 'hard';
+if(!BOT_DIFFICULTY_LEVELS.includes(botDifficulty)) botDifficulty = 'hard';
+botsEnabled = botDifficulty !== 'off';
+botsSlider.value = BOT_DIFFICULTY_LEVELS.indexOf(botDifficulty);
+botsVal.textContent = botDifficulty.toUpperCase();
+createBotsToggle.checked = botsEnabled;
+botsSlider.addEventListener('input', ()=>{
+  botDifficulty = BOT_DIFFICULTY_LEVELS[parseInt(botsSlider.value, 10)];
+  botsEnabled = botDifficulty !== 'off';
+  botsVal.textContent = botDifficulty.toUpperCase();
+  localStorage.setItem('neonArenaBotDifficulty', botDifficulty);
+  bots.forEach(b=> b.group.visible = botsEnabled && b.alive);
+});
+
+// ----- map selector -----
+let selectedMapId = localStorage.getItem('neonArenaMap') || 'arena';
+if(!['arena','skybridge','canyon'].includes(selectedMapId)) selectedMapId = 'arena';
+mapButtons.forEach(btn=>{
+  btn.classList.toggle('active', btn.dataset.map === selectedMapId);
+  btn.addEventListener('click', ()=>{
+    selectedMapId = btn.dataset.map;
+    localStorage.setItem('neonArenaMap', selectedMapId);
+    mapButtons.forEach(b=> b.classList.toggle('active', b === btn));
+  });
 });
 
 // ----- live online count + server list -----
@@ -780,7 +1003,7 @@ function renderServerList(list){
     <div class="serverRow">
       <div>
         <div class="srvName">${escapeHtml(r.name)}</div>
-        <div class="srvMeta">host: ${escapeHtml(r.hostName)} · ${r.playerCount} player${r.playerCount===1?'':'s'}</div>
+        <div class="srvMeta">host: ${escapeHtml(r.hostName)} · ${r.playerCount} player${r.playerCount===1?'':'s'} · ${escapeHtml((MAPS[r.map] && MAPS[r.map].name) || 'NEON ARENA')}</div>
       </div>
       <div class="srvBots">${r.botsEnabled ? 'BOTS ON' : 'BOTS OFF'}</div>
       <button class="menuBtn small" data-room="${r.id}">JOIN</button>
@@ -800,7 +1023,8 @@ pollOnlineCount();
 pollServerList();
 setInterval(()=>{ if(!started){ pollOnlineCount(); pollServerList(); } }, 3000);
 
-function startGame(){
+function startGame(mapId){
+  loadMap(mapId || selectedMapId);
   started = true;
   menuEl.style.display = 'none';
   hudEl.style.display = 'block';
@@ -817,8 +1041,8 @@ createServerBtn.addEventListener('click', ()=>{
   localName = name;
   menuErrorEl.textContent = '';
   ensureSocket();
-  if(!socket){ botsEnabled = wantBots; startGame(); return; }
-  socket.emit('createRoom', { name, serverName, botsEnabled: wantBots });
+  if(!socket){ botsEnabled = wantBots; startGame(selectedMapId); return; }
+  socket.emit('createRoom', { name, serverName, botsEnabled: wantBots, map: selectedMapId });
 });
 
 function joinServerRoom(roomId){
@@ -937,12 +1161,17 @@ function playTone(freq, dur, type, gain, sweepTo){
 const sfx = {
   shoot: ()=> playTone(1200,0.06,'square',0.05,700),
   hit: ()=> playTone(1800,0.05,'square',0.06),
+  headshot: ()=>{
+    playTone(2400,0.055,'square',0.08,1500);
+    setTimeout(()=> playTone(3100,0.07,'square',0.07,2200), 40);
+  },
   jump: ()=> playTone(500,0.08,'sine',0.05,750),
   grapple: ()=> playTone(300,0.18,'sawtooth',0.04,900),
   botDeath: ()=> playTone(500,0.3,'sawtooth',0.05,90),
   hurt: ()=> playTone(140,0.15,'square',0.06,70),
   pickup: ()=> playTone(700,0.12,'sine',0.06,1100),
   swing: ()=> playTone(260,0.14,'sawtooth',0.05,90),
+  swordHit: ()=> playTone(180,0.16,'sawtooth',0.09,60),
   explode: ()=> playTone(80,0.4,'sawtooth',0.09,30)
 };
 
@@ -1010,11 +1239,12 @@ function spawnDamageNumber(pos, amount, headshot){
   const tex = new THREE.CanvasTexture(canvas);
   const mat = new THREE.SpriteMaterial({ map:tex, transparent:true, depthTest:false });
   const spr = new THREE.Sprite(mat);
-  spr.scale.set(1.1, 0.55, 1);
+  const baseScaleX = headshot ? 1.5 : 1.1, baseScaleY = headshot ? 0.75 : 0.55;
+  spr.scale.set(baseScaleX, baseScaleY, 1);
   spr.position.copy(pos);
   scene.add(spr);
   damageNumbers.push({
-    obj:spr, life:0.8, maxLife:0.8,
+    obj:spr, life:0.8, maxLife:0.8, headshot, baseScaleX, baseScaleY,
     vel:new THREE.Vector3((Math.random()-0.5)*0.3, 1.4, (Math.random()-0.5)*0.3)
   });
 }
@@ -1028,6 +1258,11 @@ function updateDamageNumbers(dt){
     }
     d.obj.position.addScaledVector(d.vel, dt);
     d.obj.material.opacity = Math.max(0, d.life/d.maxLife);
+    if(d.headshot){
+      const age = d.maxLife - d.life;
+      const pop = age < 0.12 ? THREE.MathUtils.lerp(1.7, 1, age/0.12) : 1;
+      d.obj.scale.set(d.baseScaleX*pop, d.baseScaleY*pop, 1);
+    }
   }
 }
 
@@ -1154,16 +1389,8 @@ function disposeGroup(group){
 /* ============================================================
    BOTS
    ============================================================ */
-const botSpawns = [
-  new THREE.Vector3(25,1,0), new THREE.Vector3(-25,1,0),
-  new THREE.Vector3(0,1,25), new THREE.Vector3(0,1,-25),
-  new THREE.Vector3(30,6.6,-30), new THREE.Vector3(-30,6.6,30)
-];
-const wanderPool = [
-  new THREE.Vector3(20,0,20), new THREE.Vector3(-20,0,20), new THREE.Vector3(20,0,-20), new THREE.Vector3(-20,0,-20),
-  new THREE.Vector3(0,0,32), new THREE.Vector3(0,0,-32), new THREE.Vector3(32,0,0), new THREE.Vector3(-32,0,0),
-  new THREE.Vector3(15,0,0), new THREE.Vector3(-15,0,0), new THREE.Vector3(0,0,15), new THREE.Vector3(0,0,-15)
-];
+let botSpawns = [];
+let wanderPool = [];
 
 function makeNameSprite(text, colorHex){
   const canvas = document.createElement('canvas');
@@ -1246,7 +1473,6 @@ function placeBot(bot, pos){
   bot.group.position.copy(pos);
   bot.group.visible = true;
 }
-bots.forEach((b,i)=> placeBot(b, botSpawns[i % botSpawns.length]));
 
 const downRay = new THREE.Raycaster();
 function groundHeightAt(x,z){
@@ -1267,6 +1493,12 @@ function hasLineOfSight(from, to){
   return hits.length === 0;
 }
 
+function triggerHeadshotKillJuice(pos){
+  spawnParticles(pos, 0xffcc00, 22, 5.5, 0.5);
+  hitStopTimer = 0.06;
+  shakeAmount = Math.max(shakeAmount, 0.45);
+}
+
 function damageBot(bot, amount, headshot){
   if(!bot.alive) return;
   bot.hp -= amount;
@@ -1281,8 +1513,9 @@ function damageBot(bot, amount, headshot){
     playerHP = Math.min(100, playerHP + HEAL_ON_KILL);
     spawnParticles(bot.group.position.clone().add(new THREE.Vector3(0,1,0)), bot.colorHex, 18, 4, 0.6);
     sfx.botDeath();
-    addKillFeedEntry('YOU ELIMINATED ' + bot.name, '#ffcc00');
+    addKillFeedEntry((headshot ? 'YOU HEADSHOT ' : 'YOU ELIMINATED ') + bot.name, '#ffcc00');
     updateRosterHUD();
+    if(headshot) triggerHeadshotKillJuice(bot.group.position.clone().add(new THREE.Vector3(0,1.75,0)));
   }
 }
 
@@ -1296,16 +1529,36 @@ function respawnBot(bot){
   bot.wanderTarget = null;
 }
 
+const BOT_DIFFICULTY_PARAMS = {
+  easy:   { hitChanceMult:0.4,  fireMin:1.7, fireMax:2.7, dmgMult:0.6,  reaction:0.55 },
+  medium: { hitChanceMult:0.68, fireMin:1.15,fireMax:1.9, dmgMult:0.85, reaction:0.3 },
+  hard:   { hitChanceMult:1.0,  fireMin:0.8, fireMax:1.5, dmgMult:1.05, reaction:0.1 }
+};
+function botDiffParams(){
+  return BOT_DIFFICULTY_PARAMS[botDifficulty] || BOT_DIFFICULTY_PARAMS.medium;
+}
+
 function fireBotAt(bot){
+  const params = botDiffParams();
   const eye = bot.group.position.clone().add(new THREE.Vector3(0,1.75,0));
   const playerEye = camera.position.clone();
-  spawnTracer(eye, playerEye, bot.colorHex, 0.1);
-  if(isDead) return;
   const dist = eye.distanceTo(playerEye);
   const clearShot = hasLineOfSight(eye, playerEye);
-  const hitChance = clearShot ? Math.max(0.35, 1 - dist/45) : 0;
-  if(Math.random() < hitChance){
-    const dmg = 8 + Math.random()*10;
+  const hitChance = clearShot ? Math.max(0.35, 1 - dist/45) * params.hitChanceMult : 0;
+  const hit = Math.random() < hitChance;
+
+  let tracerEnd = playerEye;
+  if(!hit){
+    const missSpread = (1 - params.hitChanceMult) * 3.5 + 0.7;
+    tracerEnd = playerEye.clone().add(new THREE.Vector3(
+      (Math.random()-0.5)*missSpread, (Math.random()-0.5)*missSpread, (Math.random()-0.5)*missSpread
+    ));
+  }
+  spawnTracer(eye, tracerEnd, bot.colorHex, 0.1);
+
+  if(isDead) return;
+  if(hit){
+    const dmg = (8 + Math.random()*10) * params.dmgMult;
     playerHP -= dmg;
     shakeAmount = Math.max(shakeAmount, 0.3);
     flashDamage();
@@ -1316,6 +1569,7 @@ function fireBotAt(bot){
 
 function updateBots(dt, gameTime){
   const playerPos = camera.position;
+  const params = botDiffParams();
   bots.forEach(bot=>{
     if(!bot.alive){
       bot.respawnTimer -= dt;
@@ -1330,6 +1584,9 @@ function updateBots(dt, gameTime){
 
     let desired = new THREE.Vector3();
     if(los){
+      if(bot.state !== 'combat'){
+        bot.fireTimer = Math.max(bot.fireTimer, params.reaction + Math.random()*0.3);
+      }
       bot.state = 'combat';
       const angle = Math.atan2(dx,dz);
       bot.group.rotation.y = angle;
@@ -1343,7 +1600,7 @@ function updateBots(dt, gameTime){
       bot.fireTimer -= dt;
       if(bot.fireTimer <= 0){
         fireBotAt(bot);
-        bot.fireTimer = 0.9 + Math.random()*0.8;
+        bot.fireTimer = params.fireMin + Math.random()*(params.fireMax - params.fireMin);
       }
     } else {
       bot.state = 'wander';
@@ -1475,7 +1732,7 @@ function ensureSocket(){
       rp.pos.copy(rp.target);
     });
     updateRosterHUD();
-    startGame();
+    startGame(data.map);
   });
 
   socket.on('joinError', (data)=>{
@@ -1748,6 +2005,60 @@ function switchWeapon(index){
   crosshairEl.classList.add('xh-' + weapon.id);
 }
 
+function meleeAttack(weapon){
+  const origin = camera.position.clone();
+  const forward = new THREE.Vector3();
+  camera.getWorldDirection(forward);
+  const halfAngle = THREE.MathUtils.degToRad(weapon.meleeConeDeg || 40);
+
+  const candidates = [];
+  if(botsEnabled) bots.forEach(b=>{ if(b.alive) candidates.push({ head:b.head, body:b.body, kind:'bot', ref:b }); });
+  remotePlayers.forEach(p=>{ if(p.alive) candidates.push({ head:p.head, body:p.body, kind:'remote', ref:p }); });
+
+  let best = null, bestDist = Infinity, bestHeadshot = false;
+  const bestPoint = new THREE.Vector3();
+  const _mp = new THREE.Vector3();
+  candidates.forEach(c=>{
+    [[c.head,true],[c.body,false]].forEach(([mesh,isHead])=>{
+      mesh.getWorldPosition(_mp);
+      const toTarget = _mp.clone().sub(origin);
+      const dist = toTarget.length();
+      if(dist > weapon.range) return;
+      const angle = forward.angleTo(toTarget.normalize());
+      if(angle > halfAngle) return;
+      if(!hasLineOfSight(origin, _mp)) return;
+      if(dist < bestDist){ bestDist = dist; best = c; bestHeadshot = isHead; bestPoint.copy(_mp); }
+    });
+  });
+
+  // forward lunge — makes swings feel like a committed dash-strike
+  const lungeDir = new THREE.Vector3(forward.x, 0, forward.z);
+  if(lungeDir.lengthSq() > 0.0001){
+    lungeDir.normalize();
+    velocity.x += lungeDir.x * 5.5;
+    velocity.z += lungeDir.z * 5.5;
+  }
+
+  if(!best){
+    const swingPoint = origin.clone().addScaledVector(forward, Math.min(weapon.range, 2.2));
+    spawnParticles(swingPoint, 0x8b5cf6, 4, 1.5, 0.2);
+    return;
+  }
+
+  const dmg = bestHeadshot ? weapon.headshotDamage : weapon.damage;
+  spawnParticles(bestPoint, 0x8b5cf6, bestHeadshot ? 18 : 10, 3.2, 0.4);
+  spawnDamageNumber(bestPoint, dmg, bestHeadshot);
+  showHitMarker(bestHeadshot);
+  shakeAmount = Math.max(shakeAmount, bestHeadshot ? 0.4 : 0.22);
+  if(bestHeadshot) sfx.headshot(); else sfx.swordHit();
+
+  if(best.kind === 'bot'){
+    damageBot(best.ref, dmg, bestHeadshot);
+  } else if(best.kind === 'remote'){
+    if(socket) socket.emit('shotHit', { targetId: best.ref.id, damage: dmg, headshot: bestHeadshot });
+  }
+}
+
 function fireWeapon(){
   const weapon = WEAPONS[currentWeaponIndex];
   if(fireCooldownTimer > 0 || isDead) return;
@@ -1756,12 +2067,14 @@ function fireWeapon(){
   if(weapon.melee){
     triggerSwordSwing();
     sfx.swing();
-  } else {
-    recoilPitch += weapon.kickPitch;
-    triggerGunRecoil(weapon);
-    triggerMuzzleFlash();
-    sfx.shoot();
+    meleeAttack(weapon);
+    return;
   }
+
+  recoilPitch += weapon.kickPitch;
+  triggerGunRecoil(weapon);
+  triggerMuzzleFlash();
+  sfx.shoot();
 
   if(weapon.projectile){
     fireRocket(weapon);
@@ -1797,12 +2110,12 @@ function fireWeapon(){
         damageBot(botRef, dmg, headshot);
         showHitMarker(headshot);
         spawnDamageNumber(hit.point, dmg, headshot);
-        sfx.hit();
+        if(headshot) sfx.headshot(); else sfx.hit();
       } else if(remoteRef){
         if(socket) socket.emit('shotHit', { targetId: remoteRef.id, damage: dmg, headshot });
         showHitMarker(headshot);
         spawnDamageNumber(hit.point, dmg, headshot);
-        sfx.hit();
+        if(headshot) sfx.headshot(); else sfx.hit();
       }
     } else {
       const end = camera.position.clone().addScaledVector(shootRaycaster.ray.direction, weapon.range || 80);
@@ -1952,6 +2265,64 @@ const hitMarkerEl = document.getElementById('hitMarker');
 const damageFlashEl = document.getElementById('damageFlash');
 const deathOverlayEl = document.getElementById('deathOverlay');
 
+/* ---- speed lines: radiate outward from center, intensity scales with velocity ---- */
+const speedLinesCanvas = document.getElementById('speedLinesCanvas');
+const speedLinesCtx = speedLinesCanvas.getContext('2d');
+function resizeSpeedLines(){
+  speedLinesCanvas.width = window.innerWidth;
+  speedLinesCanvas.height = window.innerHeight;
+}
+resizeSpeedLines();
+window.addEventListener('resize', resizeSpeedLines);
+
+const speedLines = [];
+let speedLineSpawnAcc = 0;
+function updateSpeedLines(dt){
+  const w = speedLinesCanvas.width, h = speedLinesCanvas.height;
+  speedLinesCtx.clearRect(0, 0, w, h);
+
+  const horizSpeed = Math.hypot(velocity.x, velocity.z);
+  const speedMag = grapple.active ? velocity.length() : horizSpeed;
+  const intensity = Math.max(0, Math.min(1, (speedMag - 11) / 16));
+
+  if(intensity > 0.02){
+    speedLineSpawnAcc += intensity * 28 * dt;
+    while(speedLineSpawnAcc >= 1){
+      speedLineSpawnAcc -= 1;
+      speedLines.push({
+        angle: Math.random()*Math.PI*2,
+        r: 24 + Math.random()*30,
+        speed: 850 + Math.random()*450,
+        life: 0.4 + Math.random()*0.15,
+        maxLife: 0.5,
+        len: 45 + Math.random()*70,
+        a0: 0.3 + intensity*0.45
+      });
+    }
+  }
+
+  const cx = w/2, cy = h/2;
+  const maxR = Math.hypot(cx, cy);
+  speedLinesCtx.lineCap = 'round';
+  for(let i=speedLines.length-1; i>=0; i--){
+    const s = speedLines[i];
+    s.life -= dt;
+    s.r += s.speed*dt;
+    if(s.life <= 0 || s.r > maxR){ speedLines.splice(i,1); continue; }
+    const t = Math.max(0, s.life/s.maxLife);
+    const x1 = cx + Math.cos(s.angle)*s.r;
+    const y1 = cy + Math.sin(s.angle)*s.r;
+    const x2 = cx + Math.cos(s.angle)*Math.max(0, s.r - s.len);
+    const y2 = cy + Math.sin(s.angle)*Math.max(0, s.r - s.len);
+    speedLinesCtx.strokeStyle = `rgba(170,240,255,${(s.a0*t).toFixed(3)})`;
+    speedLinesCtx.lineWidth = 2;
+    speedLinesCtx.beginPath();
+    speedLinesCtx.moveTo(x1, y1);
+    speedLinesCtx.lineTo(x2, y2);
+    speedLinesCtx.stroke();
+  }
+}
+
 function addKillFeedEntry(text, color){
   const div = document.createElement('div');
   div.className = 'feedEntry';
@@ -1962,9 +2333,10 @@ function addKillFeedEntry(text, color){
   while(killFeedEl.children.length > 5) killFeedEl.removeChild(killFeedEl.lastChild);
 }
 function showHitMarker(headshot){
-  hitMarkerEl.classList.remove('show'); void hitMarkerEl.offsetWidth;
+  hitMarkerEl.classList.remove('show','headshot'); void hitMarkerEl.offsetWidth;
   hitMarkerEl.style.color = headshot ? '#ffcc00' : '#ffffff';
   hitMarkerEl.classList.add('show');
+  if(headshot) hitMarkerEl.classList.add('headshot');
 }
 function flashDamage(){
   damageFlashEl.classList.remove('flash'); void damageFlashEl.offsetWidth;
@@ -2163,8 +2535,26 @@ function updatePlayer(dt){
   spaceHeldPrev = spacePressed;
 
   // integrate + collide
+  const preLandVel = velocity.y;
   const delta = velocity.clone().multiplyScalar(dt);
   moveAndCollide(delta);
+
+  // landing impact juice
+  if(grounded && !wasGroundedPrev && preLandVel < -14){
+    const impact = Math.min(1, (-preLandVel - 14) / 24);
+    shakeAmount = Math.max(shakeAmount, 0.15 + impact*0.35);
+    spawnParticles(feetPos.clone(), 0x9fd9ff, 6 + Math.round(impact*8), 2.5, 0.3);
+  }
+  wasGroundedPrev = grounded;
+
+  // slide dust trail
+  if(sliding){
+    slideDustTimer -= dt;
+    if(slideDustTimer <= 0){
+      slideDustTimer = 0.05;
+      spawnParticles(feetPos.clone(), 0x00fff2, 2, 1.2, 0.25);
+    }
+  }
 
   // wall-run detection
   if(!grounded && hasInput && wallJumpLock <= 0 && !grapple.active){
@@ -2259,6 +2649,11 @@ function animate(){
   lastTime = now;
   dt = Math.min(dt, 0.05);
 
+  if(hitStopTimer > 0){
+    hitStopTimer = Math.max(0, hitStopTimer - dt);
+    dt *= 0.15;
+  }
+
   if(started && !paused){
     gameTime += dt;
     updatePlayer(dt);
@@ -2272,6 +2667,7 @@ function animate(){
     updateGrappleLine();
     updateWorld(dt, gameTime);
     updateGunViewmodel(dt);
+    updateSpeedLines(dt);
     updateHUD();
     updateMinimap();
   }
