@@ -65,6 +65,35 @@
     margin-top:18px; font-size:0.78rem; color:#7fa0ad; line-height:1.5; border-top:1px dashed rgba(255,255,255,0.15); padding-top:12px;
   }
 
+  /* ===== MENU TABS / SETTINGS ===== */
+  #menu .tabs{ display:flex; gap:6px; margin-bottom:22px; border-bottom:1px solid rgba(255,255,255,0.12); }
+  #menu .tabBtn{
+    flex:1; background:transparent; border:none; border-bottom:2px solid transparent; color:#7fa0ad;
+    font-family:'Chakra Petch',sans-serif; letter-spacing:2px; font-size:0.8rem; padding:10px 4px; cursor:pointer;
+  }
+  #menu .tabBtn.active{ color:var(--cyan); border-bottom-color:var(--cyan); text-shadow:0 0 8px var(--cyan); }
+  #menu .tabPanel{ display:none; text-align:left; }
+  #menu .tabPanel.active{ display:block; }
+  #menu .tabPanel.center{ text-align:center; }
+
+  #nameRow{ margin-bottom:18px; text-align:center; }
+  #nameRow label{ display:block; font-size:0.72rem; letter-spacing:2px; color:#7fa0ad; margin-bottom:6px; }
+  #nameInput{
+    font-family:'Chakra Petch',sans-serif; letter-spacing:2px; font-size:1rem; text-align:center;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(0,255,242,0.35); color:#eafcff;
+    padding:9px 14px; border-radius:4px; width:220px; max-width:100%;
+  }
+  #nameInput:focus{ outline:none; box-shadow:0 0 12px rgba(0,255,242,0.4); }
+
+  #onlineCount{ margin-top:16px; font-size:0.78rem; letter-spacing:1.5px; color:#7fd; text-align:center; }
+  #onlineCount b{ color:var(--amber); text-shadow:0 0 6px var(--amber); }
+  #onlineCount .dot{ display:inline-block; width:7px; height:7px; border-radius:50%; background:#39ff14; box-shadow:0 0 6px #39ff14; margin-right:6px; }
+
+  .settingRow{ margin-bottom:20px; }
+  .settingRow label{ display:flex; justify-content:space-between; font-size:0.78rem; letter-spacing:1.5px; color:#b9e9ff; margin-bottom:8px; }
+  .settingRow label span:last-child{ color:var(--amber); }
+  .settingRow input[type=range]{ width:100%; accent-color:#00fff2; height:4px; cursor:pointer; }
+
   /* ===== PAUSE ===== */
   #pauseMenu{
     position:fixed; inset:0; z-index:19; display:none; align-items:center; justify-content:center;
@@ -121,6 +150,9 @@
   .feedEntry{ font-size:0.78rem; background:rgba(5,6,12,0.55); padding:4px 10px; border-radius:3px; border-right:2px solid var(--magenta); transition:opacity .5s ease; }
   .feedEntry.fadeOut{ opacity:0; }
 
+  #roster{ margin-top:10px; display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+  .rosterEntry{ font-size:0.72rem; letter-spacing:1px; padding:1px 8px; color:#cdefff; }
+
   #bottomRight{ position:absolute; right:18px; bottom:18px; text-align:right; font-size:0.78rem; color:#7fd; letter-spacing:1px; }
   #bottomRight b{ color:var(--cyan); font-size:1.1rem; }
 
@@ -147,17 +179,45 @@
   <div class="panel">
     <h1 class="glow-text">NEON ARENA</h1>
     <div class="sub">BLOCKY // FAST // BRIGHT</div>
-    <button id="playBtn">▶ ENTER ARENA</button>
-    <div id="controlsList">
-      <div><b>WASD</b> — move &nbsp; <b>MOUSE</b> — look</div>
-      <div><b>SPACE</b> — jump (tap again in air to double jump)</div>
-      <div><b>SHIFT</b> — sprint &nbsp; <b>C</b> — slide while sprinting</div>
-      <div><b>Run at a wall + jump</b> — wall-run automatically, <b>SPACE</b> to wall-jump</div>
-      <div><b>RIGHT CLICK</b> (hold) — fire grappling hook, pulls you to the point</div>
-      <div><b>LEFT CLICK</b> — fire blaster</div>
-      <div><b>ESC</b> — pause</div>
+
+    <div class="tabs">
+      <button class="tabBtn active" data-tab="play">PLAY</button>
+      <button class="tabBtn" data-tab="settings">SETTINGS</button>
+      <button class="tabBtn" data-tab="howto">HOW TO PLAY</button>
     </div>
-    <div id="menuNote">Solo arena mode vs. 5 neon AI bots — full deathmatch movement &amp; combat, playable right now. (True networked multiplayer needs a live server, which isn't possible inside this self-contained file — see chat for how to add it.)</div>
+
+    <div class="tabPanel center active" data-panel="play">
+      <div id="nameRow">
+        <label for="nameInput">CALLSIGN</label>
+        <input id="nameInput" type="text" maxlength="16" autocomplete="off" spellcheck="false" />
+      </div>
+      <button id="playBtn">▶ ENTER ARENA</button>
+      <div id="onlineCount"><span class="dot"></span><b id="onlineCountNum">–</b> ONLINE NOW</div>
+      <div id="menuNote">Real-time multiplayer arena — everyone who joins fights together, plus 5 neon AI bots on every server. If the connection ever drops, you keep playing solo vs. bots.</div>
+    </div>
+
+    <div class="tabPanel" data-panel="settings">
+      <div class="settingRow">
+        <label><span>MOUSE SENSITIVITY</span><span id="sensVal">1.00</span></label>
+        <input type="range" id="sensSlider" min="0.3" max="2.5" step="0.05" value="1" />
+      </div>
+      <div class="settingRow">
+        <label><span>VOLUME</span><span id="volVal">100%</span></label>
+        <input type="range" id="volSlider" min="0" max="1.5" step="0.05" value="1" />
+      </div>
+    </div>
+
+    <div class="tabPanel" data-panel="howto">
+      <div id="controlsList">
+        <div><b>WASD</b> — move &nbsp; <b>MOUSE</b> — look</div>
+        <div><b>SPACE</b> — jump (tap again in air to double jump)</div>
+        <div><b>SHIFT</b> — sprint &nbsp; <b>C</b> — slide while sprinting</div>
+        <div><b>Run at a wall + jump</b> — wall-run automatically, <b>SPACE</b> to wall-jump</div>
+        <div><b>RIGHT CLICK</b> (hold) — fire grappling hook, pulls you to the point</div>
+        <div><b>LEFT CLICK</b> — fire blaster</div>
+        <div><b>ESC</b> — pause</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -183,6 +243,7 @@
 
   <div id="topRight">
     <div id="scoreboard">KILLS <span id="killsEl">0</span> &nbsp; DEATHS <span id="deathsEl">0</span></div>
+    <div id="roster"></div>
     <div id="killFeed"></div>
   </div>
 
@@ -194,6 +255,14 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/Pass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="/socket.io/socket.io.js"></script>
 <script>
 (function(){
 "use strict";
@@ -209,16 +278,29 @@ scene.fog = new THREE.FogExp2(0x05060a, 0.017);
 const camera = new THREE.PerspectiveCamera(82, window.innerWidth/window.innerHeight, 0.1, 500);
 camera.rotation.order = 'YXZ';
 
-const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.autoClear = false;
 renderer.domElement.id = 'gameCanvas';
 document.body.appendChild(renderer.domElement);
+
+const composer = new THREE.EffectComposer(renderer);
+composer.addPass(new THREE.RenderPass(scene, camera));
+const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.6, 0.4, 0.15);
+composer.addPass(bloomPass);
 
 window.addEventListener('resize', ()=>{
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+  bloomPass.setSize(window.innerWidth, window.innerHeight);
+  viewModelCamera.aspect = window.innerWidth/window.innerHeight;
+  viewModelCamera.updateProjectionMatrix();
 });
 
 const BASE_FOV = 82;
@@ -343,6 +425,7 @@ const grapple = { active:false, point:new THREE.Vector3(), elapsed:0, cooldown:0
 let playerHP = 100, kills = 0, deaths = 0;
 let isDead = false, respawnTimer = 0;
 let started = false, paused = false;
+let mouseSensitivity = 1, masterVolume = 1;
 
 const playerSpawns = [
   new THREE.Vector3(0,1,-35), new THREE.Vector3(0,1,35),
@@ -358,8 +441,8 @@ window.addEventListener('keyup', e=>{ keys[e.code]=false; });
 
 document.addEventListener('mousemove', e=>{
   if(document.pointerLockElement === renderer.domElement && started && !paused){
-    yaw -= e.movementX * 0.0022;
-    pitch -= e.movementY * 0.0022;
+    yaw -= e.movementX * 0.0022 * mouseSensitivity;
+    pitch -= e.movementY * 0.0022 * mouseSensitivity;
     pitch = Math.max(-1.4, Math.min(1.4, pitch));
   }
 });
@@ -382,6 +465,57 @@ const menuEl = document.getElementById('menu');
 const pauseEl = document.getElementById('pauseMenu');
 const hudEl = document.getElementById('hud');
 const tipEl = document.getElementById('tip');
+const nameInput = document.getElementById('nameInput');
+const onlineCountNum = document.getElementById('onlineCountNum');
+const sensSlider = document.getElementById('sensSlider');
+const sensVal = document.getElementById('sensVal');
+const volSlider = document.getElementById('volSlider');
+const volVal = document.getElementById('volVal');
+
+// ----- tabs -----
+document.querySelectorAll('#menu .tabBtn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#menu .tabBtn').forEach(b=> b.classList.remove('active'));
+    document.querySelectorAll('#menu .tabPanel').forEach(p=> p.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector(`#menu .tabPanel[data-panel="${btn.dataset.tab}"]`).classList.add('active');
+  });
+});
+
+// ----- name persistence -----
+nameInput.value = localStorage.getItem('neonArenaName') || ('PLAYER' + Math.floor(1000 + Math.random()*9000));
+nameInput.addEventListener('input', ()=> localStorage.setItem('neonArenaName', nameInput.value));
+
+// ----- settings persistence -----
+mouseSensitivity = parseFloat(localStorage.getItem('neonArenaSens')) || 1;
+masterVolume = parseFloat(localStorage.getItem('neonArenaVol'));
+if(isNaN(masterVolume)) masterVolume = 1;
+sensSlider.value = mouseSensitivity; sensVal.textContent = mouseSensitivity.toFixed(2);
+volSlider.value = masterVolume; volVal.textContent = Math.round(masterVolume*100) + '%';
+
+sensSlider.addEventListener('input', ()=>{
+  mouseSensitivity = parseFloat(sensSlider.value);
+  sensVal.textContent = mouseSensitivity.toFixed(2);
+  localStorage.setItem('neonArenaSens', mouseSensitivity);
+});
+volSlider.addEventListener('input', ()=>{
+  masterVolume = parseFloat(volSlider.value);
+  volVal.textContent = Math.round(masterVolume*100) + '%';
+  localStorage.setItem('neonArenaVol', masterVolume);
+});
+
+// ----- live online count -----
+async function pollOnlineCount(){
+  try{
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    onlineCountNum.textContent = data.count;
+  }catch(e){
+    onlineCountNum.textContent = '–';
+  }
+}
+pollOnlineCount();
+setInterval(()=>{ if(!started) pollOnlineCount(); }, 4000);
 
 document.getElementById('playBtn').addEventListener('click', ()=>{
   started = true;
@@ -389,6 +523,8 @@ document.getElementById('playBtn').addEventListener('click', ()=>{
   hudEl.style.display = 'block';
   renderer.domElement.requestPointerLock();
   initAudio();
+  const name = (nameInput.value || 'PLAYER').trim().slice(0,16) || 'PLAYER';
+  connectMultiplayer(name);
   showTip('Hold RIGHT CLICK near a surface to grapple. Sprint into a wall + jump to wall-run.', 6000);
 });
 
@@ -429,7 +565,7 @@ function playTone(freq, dur, type, gain, sweepTo){
     osc.type = type || 'square';
     osc.frequency.setValueAtTime(freq, actx.currentTime);
     if(sweepTo) osc.frequency.exponentialRampToValueAtTime(Math.max(20,sweepTo), actx.currentTime+dur);
-    g.gain.setValueAtTime(gain||0.08, actx.currentTime);
+    g.gain.setValueAtTime((gain||0.08) * masterVolume, actx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime+dur);
     osc.connect(g); g.connect(actx.destination);
     osc.start(); osc.stop(actx.currentTime+dur);
@@ -496,6 +632,45 @@ function updateTracers(dt){
 }
 
 /* ============================================================
+   WEAPON MODEL BUILDER (shared by bots, remote players, and the
+   local first-person viewmodel further down)
+   ============================================================ */
+function buildGunModel(scale){
+  scale = scale || 1;
+  const g = new THREE.Group();
+  const dark = 0x0d0d16;
+
+  function part(w,h,d, color, x,y,z){
+    const geo = new THREE.BoxGeometry(w,h,d);
+    const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color }));
+    mesh.position.set(x,y,z);
+    mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color:0x00fff2 })));
+    g.add(mesh);
+    return mesh;
+  }
+
+  part(0.11,0.11,0.55, dark, 0,0,0);              // body
+  part(0.06,0.06,0.42, 0x1a1a2a, 0,0.01,-0.42);    // barrel shroud
+
+  const barrel = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.022,0.022,0.32,8),
+    new THREE.MeshBasicMaterial({ color:0x0a0a12 })
+  );
+  barrel.rotation.x = Math.PI/2;
+  barrel.position.set(0,0.005,-0.62);
+  g.add(barrel);
+
+  part(0.09,0.2,0.09, dark, 0,-0.16,0.16);          // grip
+  part(0.14,0.05,0.22, 0x1a1a2a, 0,-0.09,0.32);      // mag
+
+  part(0.14,0.02,0.5, 0xff2bd6, 0,0.065,0);          // top accent stripe
+  part(0.02,0.06,0.06, 0x00fff2, 0,0.03,-0.63);       // front sight
+
+  g.scale.setScalar(scale);
+  return g;
+}
+
+/* ============================================================
    BOTS
    ============================================================ */
 const botSpawns = [
@@ -526,7 +701,7 @@ function makeNameSprite(text, colorHex){
   return spr;
 }
 
-function makeBot(name, colorHex){
+function makeHumanoidModel(colorHex){
   const group = new THREE.Group();
   const color = new THREE.Color(colorHex);
 
@@ -558,8 +733,18 @@ function makeBot(name, colorHex){
   hpFill.position.set(0,2.55,0.01);
   group.add(hpBg); group.add(hpFill);
 
-  group.add(makeNameSprite(name, colorHex));
+  // held gun, floating near the body since the humanoid model has no arms
+  const heldGun = buildGunModel(0.85);
+  heldGun.position.set(0.36,1.0,0.22);
+  heldGun.rotation.y = Math.PI * 0.1;
+  group.add(heldGun);
 
+  return { group, body, head, hpFill };
+}
+
+function makeBot(name, colorHex){
+  const { group, body, head, hpFill } = makeHumanoidModel(colorHex);
+  group.add(makeNameSprite(name, colorHex));
   scene.add(group);
 
   [body, head].forEach(m=> m.userData.botRef = null); // set after bot object created
@@ -614,6 +799,7 @@ function damageBot(bot, amount, headshot){
     spawnParticles(bot.group.position.clone().add(new THREE.Vector3(0,1,0)), bot.colorHex, 18, 4, 0.6);
     sfx.botDeath();
     addKillFeedEntry('YOU ELIMINATED ' + bot.name, '#ffcc00');
+    updateRosterHUD();
   }
 }
 
@@ -707,6 +893,153 @@ function updateBots(dt, gameTime){
 }
 
 /* ============================================================
+   NETWORKING / MULTIPLAYER
+   (relay-based: the server just rebroadcasts state, each client
+   is authoritative over its own HP/position; bots stay simulated
+   independently per-client — see plan notes for the tradeoff)
+   ============================================================ */
+let socket = null;
+let myId = null;
+let localName = 'PLAYER';
+const remotePlayers = new Map();
+let netSendTimer = 0;
+const NET_SEND_INTERVAL = 1/15;
+
+function makeRemotePlayer(id, name, colorHex){
+  const { group, body, head, hpFill } = makeHumanoidModel(colorHex);
+  group.add(makeNameSprite(name, colorHex));
+  scene.add(group);
+  const entry = {
+    id, name, colorHex, group, body, head, hpFill,
+    kills:0, deaths:0, alive:true,
+    pos:new THREE.Vector3(0,1,0), yaw:0,
+    target:new THREE.Vector3(0,1,0), targetYaw:0
+  };
+  body.userData.remoteRef = entry;
+  head.userData.remoteRef = entry;
+  remotePlayers.set(id, entry);
+  return entry;
+}
+
+function removeRemotePlayer(id){
+  const p = remotePlayers.get(id);
+  if(!p) return;
+  scene.remove(p.group);
+  remotePlayers.delete(id);
+  updateRosterHUD();
+}
+
+function updateRemotePlayers(dt){
+  remotePlayers.forEach(p=>{
+    p.pos.lerp(p.target, Math.min(1, dt*12));
+    p.yaw = THREE.MathUtils.lerp(p.yaw, p.targetYaw, Math.min(1, dt*12));
+    p.group.position.copy(p.pos);
+    p.group.rotation.y = p.yaw;
+    p.group.visible = p.alive;
+  });
+}
+
+function updateRosterHUD(){
+  if(remotePlayers.size === 0){ rosterEl.innerHTML = ''; return; }
+  const rows = [{ name: localName + ' (YOU)', color:'#eafcff', kills, deaths }];
+  remotePlayers.forEach(p=> rows.push({
+    name:p.name, color:'#'+new THREE.Color(p.colorHex).getHexString(), kills:p.kills, deaths:p.deaths
+  }));
+  rosterEl.innerHTML = rows.map(r=>
+    `<div class="rosterEntry" style="color:${r.color}">${r.name} — ${r.kills}/${r.deaths}</div>`
+  ).join('');
+}
+
+function connectMultiplayer(name){
+  localName = name;
+  if(typeof io === 'undefined') return; // socket.io client script failed to load; solo vs bots still works
+  try{ socket = io(); }catch(e){ socket = null; return; }
+
+  socket.on('connect', ()=>{ myId = socket.id; });
+
+  socket.emit('join', { name });
+
+  socket.on('roster', (list)=>{
+    list.forEach(p=>{
+      if(p.id === socket.id || remotePlayers.has(p.id)) return;
+      const rp = makeRemotePlayer(p.id, p.name, p.color);
+      rp.target.set(p.x,p.y,p.z); rp.targetYaw = p.yaw; rp.alive = p.alive;
+      rp.pos.copy(rp.target);
+    });
+    updateRosterHUD();
+  });
+
+  socket.on('playerJoined', (p)=>{
+    if(p.id === socket.id || remotePlayers.has(p.id)) return;
+    const rp = makeRemotePlayer(p.id, p.name, p.color);
+    rp.target.set(p.x,p.y,p.z); rp.targetYaw = p.yaw; rp.alive = p.alive;
+    rp.pos.copy(rp.target);
+    updateRosterHUD();
+  });
+
+  socket.on('playerMoved', (p)=>{
+    const rp = remotePlayers.get(p.id);
+    if(!rp) return;
+    rp.target.set(p.x,p.y,p.z);
+    rp.targetYaw = p.yaw;
+    rp.alive = p.alive;
+  });
+
+  socket.on('playerRespawned', (p)=>{
+    const rp = remotePlayers.get(p.id);
+    if(!rp) return;
+    rp.alive = true;
+    rp.pos.set(p.x,p.y,p.z);
+    rp.target.copy(rp.pos);
+  });
+
+  socket.on('playerLeft', (p)=> removeRemotePlayer(p.id));
+
+  socket.on('applyDamage', (d)=>{
+    if(isDead) return;
+    playerHP -= d.damage;
+    shakeAmount = Math.max(shakeAmount, 0.3);
+    flashDamage();
+    sfx.hurt();
+    if(playerHP <= 0){
+      const killer = remotePlayers.get(d.fromId);
+      respawnPlayer((killer ? killer.name : 'AN ENEMY') + ' ELIMINATED YOU');
+      socket.emit('died', { killerId: d.fromId });
+    }
+  });
+
+  socket.on('killFeed', (d)=>{
+    if(d.victimId === socket.id) return; // local respawn message already added via respawnPlayer's cause text
+    if(d.killerId === socket.id){
+      kills++;
+      addKillFeedEntry('YOU ELIMINATED ' + d.victimName, '#ffcc00');
+    } else {
+      addKillFeedEntry((d.killerName || 'THE VOID') + ' ELIMINATED ' + d.victimName, '#ff2bd6');
+    }
+    updateRosterHUD();
+  });
+
+  socket.on('scoreUpdate', (d)=>{
+    if(d.id === myId){ updateRosterHUD(); return; } // local score is tracked in kills/deaths directly
+    const rp = remotePlayers.get(d.id);
+    if(rp){ rp.kills = d.kills; rp.deaths = d.deaths; }
+    updateRosterHUD();
+  });
+
+  socket.on('disconnect', ()=>{
+    Array.from(remotePlayers.keys()).forEach(id=> removeRemotePlayer(id));
+  });
+}
+
+function sendNetworkUpdate(dt){
+  if(!socket || !socket.connected) return;
+  netSendTimer -= dt;
+  if(netSendTimer > 0) return;
+  netSendTimer = NET_SEND_INTERVAL;
+  socket.emit('move', { x:feetPos.x, y:feetPos.y, z:feetPos.z, yaw, alive: !isDead });
+}
+
+/* ============================================================
    COLLISION / MOVEMENT
    ============================================================ */
 const _box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
@@ -752,10 +1085,15 @@ function fireBlaster(){
   if(fireCooldownTimer > 0 || isDead) return;
   fireCooldownTimer = FIRE_COOLDOWN;
   recoilPitch += 0.03;
+  triggerGunRecoil();
+  triggerMuzzleFlash();
   sfx.shoot();
 
   shootRaycaster.setFromCamera({x:0,y:0}, camera);
-  const targets = solidMeshes.concat(bots.filter(b=>b.alive).flatMap(b=>[b.body,b.head]));
+  const remoteTargets = Array.from(remotePlayers.values()).filter(p=>p.alive).flatMap(p=>[p.body,p.head]);
+  const targets = solidMeshes
+    .concat(bots.filter(b=>b.alive).flatMap(b=>[b.body,b.head]))
+    .concat(remoteTargets);
   const hits = shootRaycaster.intersectObjects(targets, false);
 
   const gunOffset = camera.position.clone().add(
@@ -767,9 +1105,16 @@ function fireBlaster(){
     spawnTracer(gunOffset, hit.point, 0x00fff2, 0.06);
     spawnParticles(hit.point, 0x00fff2, 6, 2, 0.3);
     const botRef = hit.object.userData.botRef;
+    const remoteRef = hit.object.userData.remoteRef;
     if(botRef){
       const headshot = !!hit.object.userData.isHead;
       damageBot(botRef, headshot ? 48 : 26, headshot);
+      showHitMarker(headshot);
+      sfx.hit();
+    } else if(remoteRef){
+      const headshot = !!hit.object.userData.isHead;
+      const dmg = headshot ? 48 : 26;
+      if(socket) socket.emit('shotHit', { targetId: remoteRef.id, damage: dmg, headshot });
       showHitMarker(headshot);
       sfx.hit();
     }
@@ -812,6 +1157,70 @@ function updateGrappleLine(){
 }
 
 /* ============================================================
+   FIRST-PERSON WEAPON VIEWMODEL
+   Rendered in a separate scene/camera pass after the main render,
+   with the depth buffer cleared first, so the gun never clips
+   into world geometry regardless of what's behind it.
+   ============================================================ */
+const viewModelScene = new THREE.Scene();
+const viewModelCamera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth/window.innerHeight, 0.01, 10);
+
+const GUN_REST = new THREE.Vector3(0.32, -0.32, -0.55);
+const gunGroup = buildGunModel(1);
+gunGroup.position.copy(GUN_REST);
+gunGroup.rotation.y = Math.PI * 0.06;
+viewModelScene.add(gunGroup);
+
+const muzzleFlash = new THREE.Sprite(new THREE.SpriteMaterial({
+  color:0xbfffff, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
+}));
+muzzleFlash.scale.setScalar(0.3);
+muzzleFlash.position.set(0, 0.03, -0.86);
+muzzleFlash.visible = false;
+gunGroup.add(muzzleFlash);
+let muzzleFlashLife = 0;
+
+let gunRecoilOffset = 0, gunRecoilPitchKick = 0;
+let gunSwayYaw = 0, gunSwayPitch = 0, gunLastYaw = yaw, gunLastPitch = pitch;
+
+function triggerGunRecoil(){
+  gunRecoilOffset = Math.min(0.16, gunRecoilOffset + 0.09);
+  gunRecoilPitchKick = Math.min(0.22, gunRecoilPitchKick + 0.12);
+}
+function triggerMuzzleFlash(){
+  muzzleFlashLife = 0.05;
+  muzzleFlash.visible = true;
+}
+
+function updateGunViewmodel(dt){
+  const moving = grounded && Math.hypot(velocity.x, velocity.z) > 1;
+  const bobT = gameTime*10;
+  const bobX = moving ? Math.sin(bobT)*0.015 : 0;
+  const bobY = moving ? Math.abs(Math.sin(bobT))*0.012 : 0;
+
+  gunSwayYaw = THREE.MathUtils.lerp(gunSwayYaw, (yaw - gunLastYaw)*-6, dt*8);
+  gunSwayPitch = THREE.MathUtils.lerp(gunSwayPitch, (pitch - gunLastPitch)*6, dt*8);
+  gunLastYaw = yaw; gunLastPitch = pitch;
+
+  gunRecoilOffset = THREE.MathUtils.lerp(gunRecoilOffset, 0, dt*10);
+  gunRecoilPitchKick = THREE.MathUtils.lerp(gunRecoilPitchKick, 0, dt*10);
+
+  gunGroup.position.set(
+    GUN_REST.x + bobX + gunSwayYaw*0.05,
+    GUN_REST.y + bobY + gunSwayPitch*0.05,
+    GUN_REST.z + gunRecoilOffset
+  );
+  gunGroup.rotation.set(-gunRecoilPitchKick, Math.PI*0.06 + gunSwayYaw*0.4, gunSwayPitch*0.3);
+
+  if(muzzleFlashLife > 0){
+    muzzleFlashLife -= dt;
+    muzzleFlash.visible = muzzleFlashLife > 0;
+    const t = Math.max(0, muzzleFlashLife/0.05);
+    muzzleFlash.scale.setScalar(0.25 + t*0.35);
+  }
+}
+
+/* ============================================================
    HUD
    ============================================================ */
 const healthFill = document.getElementById('healthFill');
@@ -822,6 +1231,7 @@ const killsEl = document.getElementById('killsEl');
 const deathsEl = document.getElementById('deathsEl');
 const speedEl = document.getElementById('speedEl');
 const killFeedEl = document.getElementById('killFeed');
+const rosterEl = document.getElementById('roster');
 const hitMarkerEl = document.getElementById('hitMarker');
 const damageFlashEl = document.getElementById('damageFlash');
 const deathOverlayEl = document.getElementById('deathOverlay');
@@ -871,6 +1281,7 @@ function respawnPlayer(cause){
   deaths++;
   respawnTimer = 1.3;
   if(cause) addKillFeedEntry(cause, '#ff3b3b');
+  updateRosterHUD();
 }
 function doPlayerRespawn(){
   const sp = playerSpawns[Math.floor(Math.random()*playerSpawns.length)];
@@ -880,6 +1291,7 @@ function doPlayerRespawn(){
   isDead = false;
   grapple.active = false;
   if(grapple.line){ scene.remove(grapple.line); grapple.line = null; }
+  if(socket && socket.connected) socket.emit('respawned', { x:sp.x, y:sp.y, z:sp.z });
 }
 
 /* ============================================================
@@ -1091,14 +1503,19 @@ function animate(){
     gameTime += dt;
     updatePlayer(dt);
     updateBots(dt, gameTime);
+    updateRemotePlayers(dt);
+    sendNetworkUpdate(dt);
     updateParticles(dt);
     updateTracers(dt);
     updateGrappleLine();
     updateWorld(dt, gameTime);
+    updateGunViewmodel(dt);
     updateHUD();
   }
 
-  renderer.render(scene, camera);
+  composer.render();
+  renderer.clearDepth();
+  renderer.render(viewModelScene, viewModelCamera);
 }
 animate();
 
