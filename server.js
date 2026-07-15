@@ -105,6 +105,14 @@ io.on('connection', (socket) => {
     io.to(targetId).emit('applyDamage', { damage, headshot, fromId: socket.id });
   });
 
+  socket.on('rocketFired', (data) => {
+    const roomId = socket.data.roomId;
+    if (!roomId) return;
+    if (typeof data?.x !== 'number' || typeof data?.y !== 'number' || typeof data?.z !== 'number' ||
+        typeof data?.dx !== 'number' || typeof data?.dy !== 'number' || typeof data?.dz !== 'number') return;
+    socket.to(roomId).emit('rocketFired', data);
+  });
+
   socket.on('died', (data) => {
     const roomId = socket.data.roomId;
     if (!roomId) return;

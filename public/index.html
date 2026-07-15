@@ -157,14 +157,31 @@
   #hud{ position:fixed; inset:0; z-index:10; pointer-events:none; display:none; font-family:'Chakra Petch',sans-serif; }
 
   #crosshair{
-    position:absolute; top:50%; left:50%; width:18px; height:18px; transform:translate(-50%,-50%);
+    position:absolute; top:50%; left:50%; width:40px; height:40px; transform:translate(-50%,-50%);
+    --xh-color: var(--cyan); --xh-size: 18px;
+    transition:transform .1s ease;
   }
   #crosshair::before, #crosshair::after{
-    content:''; position:absolute; background:var(--cyan); box-shadow:0 0 6px var(--cyan);
+    content:''; position:absolute; background:var(--xh-color); box-shadow:0 0 6px var(--xh-color);
+    transition:width .1s ease, height .1s ease, background .1s ease;
   }
-  #crosshair::before{ left:8px; top:0; width:2px; height:18px; }
-  #crosshair::after{ top:8px; left:0; height:2px; width:18px; }
+  #crosshair::before{ left:calc(50% - 1px); top:calc(50% - var(--xh-size)/2); width:2px; height:var(--xh-size); }
+  #crosshair::after{ top:calc(50% - 1px); left:calc(50% - var(--xh-size)/2); height:2px; width:var(--xh-size); }
   #crosshair.hidden{ display:none; }
+
+  #crosshair.xh-blaster{ --xh-color: var(--cyan); --xh-size:18px; }
+  #crosshair.xh-smg{ --xh-color:#7cff5e; --xh-size:24px; }
+  #crosshair.xh-deagle{ --xh-color: var(--amber); --xh-size:13px; }
+  #crosshair.xh-sniper{ --xh-color: var(--cyan); --xh-size:6px; }
+  #crosshair.xh-ar{ --xh-color: var(--cyan); --xh-size:20px; }
+  #crosshair.xh-shotgun{ --xh-color:#ff6a00; --xh-size:32px; }
+  #crosshair.xh-minigun{ --xh-color: var(--magenta); --xh-size:36px; }
+  #crosshair.xh-sword{ --xh-color: var(--violet); --xh-size:12px; transform:translate(-50%,-50%) rotate(45deg); }
+  #crosshair.xh-rpg::before, #crosshair.xh-rpg::after{ display:none; }
+  #crosshair.xh-rpg{
+    --xh-color:#ff3b3b; width:26px; height:26px;
+    border:2px solid var(--xh-color); border-radius:50%; box-shadow:0 0 8px var(--xh-color);
+  }
 
   #hitMarker{
     position:absolute; top:50%; left:50%; width:26px; height:26px; transform:translate(-50%,-50%) rotate(45deg);
@@ -229,6 +246,22 @@
     position:absolute; bottom:96px; left:50%; transform:translateX(-50%);
     font-family:'Chakra Petch',sans-serif; font-size:0.75rem; letter-spacing:3px; color:#8fd; opacity:0.75;
   }
+
+  #killStreakBanner{
+    position:absolute; top:28%; left:50%; transform:translate(-50%,-50%) scale(0.8);
+    font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:2.2rem; letter-spacing:6px;
+    color:var(--amber); text-shadow:0 0 12px var(--amber), 0 0 30px rgba(255,204,0,0.6);
+    opacity:0; transition:opacity .15s ease, transform .15s ease;
+  }
+  #killStreakBanner.show{ opacity:1; transform:translate(-50%,-50%) scale(1); animation:killStreakPulse 1.6s ease-out; }
+  @keyframes killStreakPulse{ 0%{ opacity:0; transform:translate(-50%,-50%) scale(0.7); } 15%{ opacity:1; transform:translate(-50%,-50%) scale(1.05); } 80%{ opacity:1; } 100%{ opacity:0; transform:translate(-50%,-50%) scale(1); } }
+
+  #minimap{
+    position:absolute; left:18px; top:16px; width:140px; height:140px; border-radius:50%;
+    border:1px solid rgba(0,255,242,0.4); background:rgba(5,6,12,0.55); overflow:hidden;
+    box-shadow:0 0 14px rgba(0,255,242,0.2);
+  }
+  #minimapCanvas{ width:100%; height:100%; }
 
   #tabList{
     position:fixed; inset:0; z-index:15; display:none; align-items:flex-start; justify-content:center;
@@ -358,6 +391,8 @@
   <div id="damageFlash"></div>
   <div id="scopeOverlay"><div class="reticle"></div></div>
   <div id="weaponLabel">BLASTER</div>
+  <div id="killStreakBanner"></div>
+  <div id="minimap"><canvas id="minimapCanvas" width="140" height="140"></canvas></div>
 
   <div id="tabList">
     <div class="tabListPanel">
@@ -564,14 +599,15 @@ const GRAPPLE_COOLDOWN = 0.35;
 const HEAL_ON_KILL = 25;
 
 const WEAPONS = [
-  { id:'blaster', name:'BLASTER',        damage:26, headshotDamage:48,  cooldown:0.15,  spread:0.010, adsSpread:0.004, automatic:false, pellets:1, range:200, adsZoom:0.9,  moveMultAds:1,    recoil:0.09, kickPitch:0.014, restOffset:new THREE.Vector3(0,0,0) },
-  { id:'smg',     name:'SMG',            damage:14, headshotDamage:26,  cooldown:0.09,  spread:0.028, adsSpread:0.012, automatic:true,  pellets:1, range:200, adsZoom:0.85, moveMultAds:1,    recoil:0.05, kickPitch:0.008, restOffset:new THREE.Vector3(0,0.02,0.05) },
-  { id:'deagle',  name:'DEAGLE',         damage:34, headshotDamage:70,  cooldown:0.32,  spread:0.006, adsSpread:0.0015,automatic:false, pellets:1, range:200, adsZoom:0.8,  moveMultAds:1,    recoil:0.16, kickPitch:0.022, restOffset:new THREE.Vector3(0.02,-0.02,0.12) },
-  { id:'sniper',  name:'SNIPER',         damage:85, headshotDamage:150, cooldown:1.1,   spread:0.002, adsSpread:0,      automatic:false, pellets:1, range:400, adsZoom:0.16, moveMultAds:0.35, recoil:0.22, kickPitch:0.03,  restOffset:new THREE.Vector3(-0.04,-0.05,-0.15) },
-  { id:'ar',      name:'ASSAULT RIFLE',  damage:20, headshotDamage:38,  cooldown:0.11,  spread:0.018, adsSpread:0.007,  automatic:true,  pellets:1, range:250, adsZoom:0.82, moveMultAds:1,    recoil:0.06, kickPitch:0.010, restOffset:new THREE.Vector3(0,0.01,0.03) },
-  { id:'shotgun', name:'SHOTGUN',        damage:9,  headshotDamage:15,  cooldown:0.75,  spread:0.05,  adsSpread:0.03,   automatic:false, pellets:8, range:40,  adsZoom:0.95, moveMultAds:0.9,  recoil:0.28, kickPitch:0.05,  restOffset:new THREE.Vector3(0.03,-0.03,0.05) },
-  { id:'minigun', name:'MINIGUN',        damage:10, headshotDamage:16,  cooldown:0.045, spread:0.05,  adsSpread:0.03,   automatic:true,  pellets:1, range:200, adsZoom:0.9,  moveMultAds:0.6,  recoil:0.03, kickPitch:0.006, restOffset:new THREE.Vector3(0,-0.02,0.15) },
-  { id:'sword',   name:'SWORD',          damage:55, headshotDamage:90,  cooldown:0.5,   spread:0,     adsSpread:0,      automatic:false, pellets:1, range:2.6, adsZoom:1,    moveMultAds:1,    recoil:0,    kickPitch:0,     restOffset:new THREE.Vector3(0,-0.02,0.05), melee:true }
+  { id:'blaster', name:'BLASTER',        damage:26, headshotDamage:48,  cooldown:0.15,  spread:0.010, adsSpread:0.004, automatic:false, pellets:1, range:200, adsZoom:0.9,  moveMultAds:1,    recoil:0.09, kickPitch:0.014, adsSensitivity:0.55, restOffset:new THREE.Vector3(0,0,0) },
+  { id:'smg',     name:'SMG',            damage:14, headshotDamage:26,  cooldown:0.09,  spread:0.028, adsSpread:0.012, automatic:true,  pellets:1, range:200, adsZoom:0.85, moveMultAds:1,    recoil:0.05, kickPitch:0.008, adsSensitivity:0.6,  restOffset:new THREE.Vector3(0,0.02,0.05) },
+  { id:'deagle',  name:'DEAGLE',         damage:34, headshotDamage:70,  cooldown:0.32,  spread:0.006, adsSpread:0.0015,automatic:false, pellets:1, range:200, adsZoom:0.8,  moveMultAds:1,    recoil:0.16, kickPitch:0.022, adsSensitivity:0.5,  restOffset:new THREE.Vector3(0.02,-0.02,0.12) },
+  { id:'sniper',  name:'SNIPER',         damage:85, headshotDamage:150, cooldown:1.1,   spread:0.002, adsSpread:0,      automatic:false, pellets:1, range:400, adsZoom:0.16, moveMultAds:0.35, recoil:0.22, kickPitch:0.03,  adsSensitivity:0.18, restOffset:new THREE.Vector3(-0.04,-0.05,-0.15) },
+  { id:'ar',      name:'ASSAULT RIFLE',  damage:20, headshotDamage:38,  cooldown:0.11,  spread:0.018, adsSpread:0.007,  automatic:true,  pellets:1, range:250, adsZoom:0.82, moveMultAds:1,    recoil:0.06, kickPitch:0.010, adsSensitivity:0.55, restOffset:new THREE.Vector3(0,0.01,0.03) },
+  { id:'shotgun', name:'SHOTGUN',        damage:9,  headshotDamage:15,  cooldown:0.75,  spread:0.05,  adsSpread:0.03,   automatic:false, pellets:8, range:40,  adsZoom:0.95, moveMultAds:0.9,  recoil:0.28, kickPitch:0.05,  adsSensitivity:0.65, restOffset:new THREE.Vector3(0.03,-0.03,0.05) },
+  { id:'minigun', name:'MINIGUN',        damage:10, headshotDamage:16,  cooldown:0.045, spread:0.05,  adsSpread:0.03,   automatic:true,  pellets:1, range:200, adsZoom:0.9,  moveMultAds:0.6,  recoil:0.03, kickPitch:0.006, adsSensitivity:0.6,  restOffset:new THREE.Vector3(0,-0.02,0.15) },
+  { id:'sword',   name:'SWORD',          damage:55, headshotDamage:90,  cooldown:0.5,   spread:0,     adsSpread:0,      automatic:false, pellets:1, range:2.6, adsZoom:1,    moveMultAds:1,    recoil:0,    kickPitch:0,     adsSensitivity:1,    restOffset:new THREE.Vector3(0,-0.02,0.05), melee:true },
+  { id:'rpg',     name:'RPG',            damage:90, headshotDamage:90,  cooldown:1.8,   spread:0.004, adsSpread:0.002,  automatic:false, pellets:1, range:120, adsZoom:0.85, moveMultAds:0.8,  recoil:0.3,  kickPitch:0.05,  adsSensitivity:0.55, restOffset:new THREE.Vector3(0.05,-0.05,0.1), projectile:true, projectileSpeed:45, splashRadius:6 }
 ];
 let currentWeaponIndex = 0;
 let mouseHeld = false, adsActive = false, adsBlend = 0;
@@ -607,7 +643,7 @@ const playerSpawns = [
 /* ============================================================
    INPUT
    ============================================================ */
-const WEAPON_KEYS = { Digit1:0, Digit2:1, Digit3:2, Digit4:3, Digit5:4, Digit6:5, Digit7:6, Digit8:7 };
+const WEAPON_KEYS = { Digit1:0, Digit2:1, Digit3:2, Digit4:3, Digit5:4, Digit6:5, Digit7:6, Digit8:7, Digit9:8 };
 let buyMenuOpen = false;
 const keys = {};
 window.addEventListener('keydown', e=>{
@@ -632,8 +668,9 @@ window.addEventListener('keyup', e=>{
 
 document.addEventListener('mousemove', e=>{
   if(document.pointerLockElement === renderer.domElement && started && !paused){
-    yaw -= e.movementX * 0.0022 * mouseSensitivity;
-    pitch -= e.movementY * 0.0022 * mouseSensitivity;
+    const adsSensMult = adsActive ? WEAPONS[currentWeaponIndex].adsSensitivity : 1;
+    yaw -= e.movementX * 0.0022 * mouseSensitivity * adsSensMult;
+    pitch -= e.movementY * 0.0022 * mouseSensitivity * adsSensMult;
     pitch = Math.max(-1.4, Math.min(1.4, pitch));
   }
 });
@@ -664,6 +701,9 @@ const tipEl = document.getElementById('tip');
 const crosshairEl = document.getElementById('crosshair');
 const weaponLabelEl = document.getElementById('weaponLabel');
 const scopeOverlayEl = document.getElementById('scopeOverlay');
+const killStreakBannerEl = document.getElementById('killStreakBanner');
+const minimapCanvas = document.getElementById('minimapCanvas');
+const minimapCtx = minimapCanvas.getContext('2d');
 const tabListEl = document.getElementById('tabList');
 const tabListRowsEl = document.getElementById('tabListRows');
 const buyMenuEl = document.getElementById('buyMenu');
@@ -806,6 +846,7 @@ function leaveToMenu(){
   buyMenuOpen = false;
   isDead = false;
   kills = 0; deaths = 0;
+  killStreak = 0;
   playerHP = 100;
   feetPos.copy(playerSpawns[0]);
   velocity.set(0,0,0);
@@ -901,7 +942,8 @@ const sfx = {
   botDeath: ()=> playTone(500,0.3,'sawtooth',0.05,90),
   hurt: ()=> playTone(140,0.15,'square',0.06,70),
   pickup: ()=> playTone(700,0.12,'sine',0.06,1100),
-  swing: ()=> playTone(260,0.14,'sawtooth',0.05,90)
+  swing: ()=> playTone(260,0.14,'sawtooth',0.05,90),
+  explode: ()=> playTone(80,0.4,'sawtooth',0.09,30)
 };
 
 /* ============================================================
@@ -952,6 +994,54 @@ function updateTracers(dt){
     if(t.life<=0){ scene.remove(t.obj); t.obj.geometry.dispose(); t.obj.material.dispose(); tracers.splice(i,1); continue; }
     t.obj.material.opacity = Math.max(0, t.life/t.maxLife) * 0.9;
   }
+}
+
+const damageNumbers = [];
+function spawnDamageNumber(pos, amount, headshot){
+  const canvas = document.createElement('canvas');
+  canvas.width = 128; canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.font = `bold ${headshot ? 40 : 32}px monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const color = headshot ? '#ffcc00' : '#ffffff';
+  ctx.shadowColor = color; ctx.shadowBlur = 12;
+  ctx.fillStyle = color;
+  ctx.fillText(String(Math.round(amount)), 64, 32);
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map:tex, transparent:true, depthTest:false });
+  const spr = new THREE.Sprite(mat);
+  spr.scale.set(1.1, 0.55, 1);
+  spr.position.copy(pos);
+  scene.add(spr);
+  damageNumbers.push({
+    obj:spr, life:0.8, maxLife:0.8,
+    vel:new THREE.Vector3((Math.random()-0.5)*0.3, 1.4, (Math.random()-0.5)*0.3)
+  });
+}
+function updateDamageNumbers(dt){
+  for(let i=damageNumbers.length-1;i>=0;i--){
+    const d = damageNumbers[i];
+    d.life -= dt;
+    if(d.life <= 0){
+      scene.remove(d.obj); d.obj.material.map.dispose(); d.obj.material.dispose();
+      damageNumbers.splice(i,1); continue;
+    }
+    d.obj.position.addScaledVector(d.vel, dt);
+    d.obj.material.opacity = Math.max(0, d.life/d.maxLife);
+  }
+}
+
+let killStreak = 0;
+const KILLSTREAK_NAMES = { 2:'DOUBLE KILL', 3:'TRIPLE KILL', 4:'MEGA KILL', 5:'RAMPAGE' };
+function registerLocalKill(){
+  killStreak++;
+  const name = KILLSTREAK_NAMES[killStreak] || (killStreak > 5 ? 'UNSTOPPABLE' : null);
+  if(name) showKillStreakBanner(name);
+}
+function showKillStreakBanner(text){
+  killStreakBannerEl.textContent = text;
+  killStreakBannerEl.classList.remove('show'); void killStreakBannerEl.offsetWidth;
+  killStreakBannerEl.classList.add('show');
 }
 
 /* ============================================================
@@ -1031,6 +1121,13 @@ function buildGunModel(type, scale){
     part(0.18,0.03,0.05, 0x1a1a2a, 0,0,-0.12);             // crossguard
     part(0.045,0.045,0.22, dark, 0,-0.01,0.05);            // handle
     part(0.07,0.07,0.05, 0x8b5cf6, 0,-0.01,0.18);          // pommel
+  } else if(type === 'rpg'){
+    cyl(0.09,0.9, dark, 0,0,-0.1);                         // launcher tube
+    cyl(0.10,0.06, 0x1a1a2a, 0,0,-0.53);                   // muzzle rim
+    part(0.09,0.18,0.10, dark, 0,-0.17,0.22);              // grip
+    part(0.07,0.09,0.16, 0x1a1a2a, 0,0.05,0.02);           // sight housing
+    part(0.06,0.14,0.10, dark, 0,-0.05,0.42);              // rear stock/handle
+    part(0.11,0.02,0.85, 0xff3b3b, 0,0.1,-0.1);            // top accent stripe
   } else { // blaster (default)
     part(0.11,0.11,0.55, dark, 0,0,0);                     // body
     part(0.06,0.06,0.42, 0x1a1a2a, 0,0.01,-0.42);          // barrel shroud
@@ -1047,7 +1144,9 @@ function buildGunModel(type, scale){
 
 function disposeGroup(group){
   group.traverse(obj=>{
-    if(obj.geometry) obj.geometry.dispose();
+    // THREE.Sprite instances share a module-level singleton geometry — disposing
+    // it would break every sprite in the scene, so only dispose real mesh geometry.
+    if(!obj.isSprite && obj.geometry) obj.geometry.dispose();
     if(obj.material) obj.material.dispose();
   });
 }
@@ -1178,6 +1277,7 @@ function damageBot(bot, amount, headshot){
     bot.group.visible = false;
     bot.respawnTimer = 4.5;
     kills++;
+    registerLocalKill();
     playerHP = Math.min(100, playerHP + HEAL_ON_KILL);
     spawnParticles(bot.group.position.clone().add(new THREE.Vector3(0,1,0)), bot.colorHex, 18, 4, 0.6);
     sfx.botDeath();
@@ -1408,6 +1508,16 @@ function ensureSocket(){
 
   socket.on('playerLeft', (p)=> removeRemotePlayer(p.id));
 
+  socket.on('rocketFired', (data)=>{
+    const rpgDef = WEAPONS.find(w=> w.id === 'rpg');
+    spawnLocalRocket(
+      new THREE.Vector3(data.x, data.y, data.z),
+      new THREE.Vector3(data.dx, data.dy, data.dz),
+      rpgDef,
+      false
+    );
+  });
+
   socket.on('applyDamage', (d)=>{
     if(isDead) return;
     playerHP -= d.damage;
@@ -1425,6 +1535,7 @@ function ensureSocket(){
     if(d.victimId === socket.id) return; // local respawn message already added via respawnPlayer's cause text
     if(d.killerId === socket.id){
       kills++;
+      registerLocalKill();
       playerHP = Math.min(100, playerHP + HEAL_ON_KILL);
       addKillFeedEntry('YOU ELIMINATED ' + d.victimName, '#ffcc00');
     } else {
@@ -1491,10 +1602,139 @@ function moveAndCollide(delta){
 }
 
 /* ============================================================
+   ROCKET PROJECTILES (RPG) — the shooter's client owns all hit
+   detection/damage; rockets rendered on other clients (via the
+   networked rocketFired relay) are visual-only ghosts.
+   ============================================================ */
+const rockets = [];
+const rocketRaycaster = new THREE.Raycaster();
+
+function buildRocketMesh(){
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.4,8), new THREE.MeshBasicMaterial({ color:0xff3b3b }));
+  body.rotation.x = Math.PI/2;
+  g.add(body);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.06,0.16,8), new THREE.MeshBasicMaterial({ color:0xffcc00 }));
+  nose.rotation.x = -Math.PI/2;
+  nose.position.z = -0.28;
+  g.add(nose);
+  const trail = new THREE.Sprite(new THREE.SpriteMaterial({
+    color:0xff6a00, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
+  }));
+  trail.scale.set(0.3,0.3,1);
+  trail.position.z = 0.22;
+  g.add(trail);
+  return g;
+}
+
+function spawnLocalRocket(origin, dir, weapon, isLocal){
+  const mesh = buildRocketMesh();
+  mesh.position.copy(origin);
+  mesh.lookAt(origin.clone().add(dir));
+  scene.add(mesh);
+  rockets.push({
+    mesh, dir: dir.clone(), speed: weapon.projectileSpeed, life: 3, traveled: 0,
+    maxRange: weapon.range, splashRadius: weapon.splashRadius, damage: weapon.damage, isLocal
+  });
+}
+
+function fireRocket(weapon){
+  const spread = adsActive ? weapon.adsSpread : weapon.spread;
+  const ndcX = (Math.random()-0.5)*spread*2;
+  const ndcY = (Math.random()-0.5)*spread*2;
+  shootRaycaster.setFromCamera({x:ndcX, y:ndcY}, camera);
+  const dir = shootRaycaster.ray.direction.clone();
+  const origin = camera.position.clone().add(new THREE.Vector3(0.25,-0.2,0).applyQuaternion(camera.quaternion));
+
+  spawnLocalRocket(origin, dir, weapon, true);
+
+  if(socket && socket.connected){
+    socket.emit('rocketFired', { x:origin.x, y:origin.y, z:origin.z, dx:dir.x, dy:dir.y, dz:dir.z });
+  }
+}
+
+function explodeRocket(point, rocket){
+  spawnParticles(point, 0xff6a00, 26, 5, 0.6);
+  spawnParticles(point, 0xffcc00, 14, 3, 0.4);
+  sfx.explode();
+
+  if(!rocket.isLocal) return; // ghost rockets from other clients are visual-only, no damage
+
+  const falloff = dist => Math.max(0, 1 - dist/rocket.splashRadius);
+
+  if(botsEnabled){
+    bots.forEach(bot=>{
+      if(!bot.alive) return;
+      const dist = bot.group.position.distanceTo(point);
+      if(dist <= rocket.splashRadius){
+        const dmg = rocket.damage*falloff(dist);
+        damageBot(bot, dmg, false);
+        spawnDamageNumber(bot.group.position.clone().add(new THREE.Vector3(0,1.7,0)), dmg, false);
+      }
+    });
+  }
+  remotePlayers.forEach(p=>{
+    if(!p.alive) return;
+    const dist = p.pos.distanceTo(point);
+    if(dist <= rocket.splashRadius){
+      const dmg = rocket.damage*falloff(dist);
+      if(socket) socket.emit('shotHit', { targetId: p.id, damage: dmg, headshot:false });
+      spawnDamageNumber(p.pos.clone().add(new THREE.Vector3(0,1.7,0)), dmg, false);
+    }
+  });
+
+  if(!isDead){
+    const selfDist = camera.position.distanceTo(point);
+    if(selfDist <= rocket.splashRadius){
+      playerHP -= rocket.damage*falloff(selfDist);
+      shakeAmount = Math.max(shakeAmount, 0.5);
+      flashDamage();
+      sfx.hurt();
+      if(playerHP <= 0) respawnPlayer('YOU BLEW YOURSELF UP');
+    }
+  }
+}
+
+function updateRockets(dt){
+  for(let i=rockets.length-1; i>=0; i--){
+    const r = rockets[i];
+    r.life -= dt;
+    const step = r.speed*dt;
+
+    rocketRaycaster.set(r.mesh.position, r.dir);
+    rocketRaycaster.far = step + 0.1;
+    const targets = r.isLocal
+      ? solidMeshes
+          .concat(botsEnabled ? bots.filter(b=>b.alive).flatMap(b=>[b.body,b.head]) : [])
+          .concat(Array.from(remotePlayers.values()).filter(p=>p.alive).flatMap(p=>[p.body,p.head]))
+      : solidMeshes;
+    const hits = rocketRaycaster.intersectObjects(targets, false);
+
+    if(hits.length){
+      explodeRocket(hits[0].point, r);
+      scene.remove(r.mesh); disposeGroup(r.mesh);
+      rockets.splice(i,1);
+      continue;
+    }
+
+    r.mesh.position.addScaledVector(r.dir, step);
+    r.traveled += step;
+
+    if(r.life <= 0 || r.traveled >= r.maxRange){
+      explodeRocket(r.mesh.position.clone(), r);
+      scene.remove(r.mesh); disposeGroup(r.mesh);
+      rockets.splice(i,1);
+    }
+  }
+}
+
+/* ============================================================
    COMBAT
    ============================================================ */
 let fireCooldownTimer = 0;
 const shootRaycaster = new THREE.Raycaster();
+
+const CROSSHAIR_CLASSES = WEAPONS.map(w=> 'xh-' + w.id);
 
 function switchWeapon(index){
   if(index < 0 || index >= WEAPONS.length || index === currentWeaponIndex && gunModel) return;
@@ -1504,6 +1744,8 @@ function switchWeapon(index){
   gunModel = buildGunModel(weapon.id, 1);
   gunGroup.add(gunModel);
   weaponLabelEl.textContent = weapon.name;
+  crosshairEl.classList.remove(...CROSSHAIR_CLASSES);
+  crosshairEl.classList.add('xh-' + weapon.id);
 }
 
 function fireWeapon(){
@@ -1519,6 +1761,11 @@ function fireWeapon(){
     triggerGunRecoil(weapon);
     triggerMuzzleFlash();
     sfx.shoot();
+  }
+
+  if(weapon.projectile){
+    fireRocket(weapon);
+    return;
   }
 
   const remoteTargets = Array.from(remotePlayers.values()).filter(p=>p.alive).flatMap(p=>[p.body,p.head]);
@@ -1549,10 +1796,12 @@ function fireWeapon(){
       if(botRef){
         damageBot(botRef, dmg, headshot);
         showHitMarker(headshot);
+        spawnDamageNumber(hit.point, dmg, headshot);
         sfx.hit();
       } else if(remoteRef){
         if(socket) socket.emit('shotHit', { targetId: remoteRef.id, damage: dmg, headshot });
         showHitMarker(headshot);
+        spawnDamageNumber(hit.point, dmg, headshot);
         sfx.hit();
       }
     } else {
@@ -1739,6 +1988,46 @@ function updateHUD(){
   deathOverlayEl.classList.toggle('show', isDead);
 }
 
+const MINIMAP_SCALE = 70/46; // canvas radius / world half-extent (arena spans roughly ±40, plus margin)
+function updateMinimap(){
+  const ctx = minimapCtx;
+  ctx.clearRect(0,0,140,140);
+  ctx.save();
+  ctx.translate(70,70);
+
+  function drawDot(x,z,color,size){
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.arc(x*MINIMAP_SCALE, z*MINIMAP_SCALE, size, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  if(botsEnabled){
+    bots.forEach(bot=>{
+      if(!bot.alive) return;
+      drawDot(bot.group.position.x, bot.group.position.z, '#'+new THREE.Color(bot.colorHex).getHexString(), 3);
+    });
+  }
+  remotePlayers.forEach(p=>{
+    if(!p.alive) return;
+    drawDot(p.pos.x, p.pos.z, '#'+new THREE.Color(p.colorHex).getHexString(), 3.5);
+  });
+
+  ctx.save();
+  ctx.translate(feetPos.x*MINIMAP_SCALE, feetPos.z*MINIMAP_SCALE);
+  ctx.rotate(-yaw);
+  ctx.fillStyle = '#00fff2';
+  ctx.beginPath();
+  ctx.moveTo(0,-6);
+  ctx.lineTo(5,5);
+  ctx.lineTo(-5,5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
 /* ============================================================
    RESPAWN
    ============================================================ */
@@ -1746,6 +2035,7 @@ function respawnPlayer(cause){
   if(isDead) return;
   isDead = true;
   deaths++;
+  killStreak = 0;
   respawnTimer = 1.3;
   if(cause) addKillFeedEntry(cause, '#ff3b3b');
   updateRosterHUD();
@@ -1977,10 +2267,13 @@ function animate(){
     sendNetworkUpdate(dt);
     updateParticles(dt);
     updateTracers(dt);
+    updateRockets(dt);
+    updateDamageNumbers(dt);
     updateGrappleLine();
     updateWorld(dt, gameTime);
     updateGunViewmodel(dt);
     updateHUD();
+    updateMinimap();
   }
 
   composer.render();
