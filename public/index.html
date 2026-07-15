@@ -94,6 +94,15 @@
   .settingRow label span:last-child{ color:var(--amber); }
   .settingRow input[type=range]{ width:100%; accent-color:#00fff2; height:4px; cursor:pointer; }
 
+  .toggleRow{ display:flex; align-items:center; justify-content:space-between; margin-bottom:0; }
+  .toggleLabel span{ font-size:0.78rem; letter-spacing:1.5px; color:#b9e9ff; }
+  .switch{ position:relative; display:inline-block; width:46px; height:24px; cursor:pointer; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; position:absolute; }
+  .switchTrack{ position:absolute; inset:0; background:rgba(255,255,255,0.08); border:1px solid rgba(0,255,242,0.35); border-radius:24px; transition:.2s; }
+  .switchTrack::before{ content:''; position:absolute; height:16px; width:16px; left:3px; top:2px; background:#00fff2; border-radius:50%; transition:.2s; box-shadow:0 0 6px #00fff2; }
+  .switch input:checked + .switchTrack{ border-color:#00fff2; box-shadow:0 0 10px rgba(0,255,242,0.4); }
+  .switch input:checked + .switchTrack::before{ transform:translateX(22px); }
+
   /* ===== PAUSE ===== */
   #pauseMenu{
     position:fixed; inset:0; z-index:19; display:none; align-items:center; justify-content:center;
@@ -171,6 +180,38 @@
   #deathOverlay .msg{ font-family:'Chakra Petch',sans-serif; font-size:2rem; letter-spacing:6px; color:var(--danger); text-shadow:0 0 16px var(--danger); }
 
   #centerReticleHint{ position:absolute; top:calc(50% + 30px); left:50%; transform:translateX(-50%); font-size:0.7rem; color:#8fd; opacity:0.7; letter-spacing:1px; }
+
+  #scopeOverlay{
+    position:absolute; inset:0; display:none;
+    background:radial-gradient(circle at 50% 50%, transparent 0 21%, rgba(0,0,0,0.97) 23%);
+  }
+  #scopeOverlay.show{ display:block; }
+  #scopeOverlay .reticle{ position:absolute; top:50%; left:50%; width:1px; height:1px; }
+  #scopeOverlay .reticle::before, #scopeOverlay .reticle::after{ content:''; position:absolute; background:rgba(0,255,242,0.8); }
+  #scopeOverlay .reticle::before{ left:-70px; top:0; width:140px; height:1px; }
+  #scopeOverlay .reticle::after{ top:-70px; left:0; height:140px; width:1px; }
+
+  #weaponLabel{
+    position:absolute; bottom:96px; left:50%; transform:translateX(-50%);
+    font-family:'Chakra Petch',sans-serif; font-size:0.75rem; letter-spacing:3px; color:#8fd; opacity:0.75;
+  }
+
+  #tabList{
+    position:fixed; inset:0; z-index:15; display:none; align-items:flex-start; justify-content:center;
+    padding-top:8vh; background:rgba(3,4,10,0.55); backdrop-filter:blur(2px);
+  }
+  #tabList.show{ display:flex; }
+  .tabListPanel{
+    min-width:420px; max-width:640px; width:80%; padding:20px 26px; border:1px solid rgba(0,255,242,0.35);
+    background:var(--panel); border-radius:6px; box-shadow:0 0 40px rgba(0,255,242,0.15);
+  }
+  .tabListPanel h3{ font-family:'Chakra Petch',sans-serif; letter-spacing:3px; color:var(--cyan); text-shadow:0 0 8px var(--cyan); margin:0 0 14px 0; font-size:1rem; }
+  #tabListHeader, .tabListRow{
+    display:grid; grid-template-columns:1fr 90px 90px; gap:8px; font-size:0.8rem; padding:6px 4px;
+  }
+  #tabListHeader{ color:#7fa0ad; letter-spacing:2px; font-size:0.68rem; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:8px; }
+  .tabListRow{ border-bottom:1px solid rgba(255,255,255,0.06); }
+  .tabListRow .role{ color:#7fa0ad; }
 </style>
 </head>
 <body>
@@ -205,6 +246,13 @@
         <label><span>VOLUME</span><span id="volVal">100%</span></label>
         <input type="range" id="volSlider" min="0" max="1.5" step="0.05" value="1" />
       </div>
+      <div class="settingRow toggleRow">
+        <label class="toggleLabel"><span>AI BOTS</span></label>
+        <label class="switch">
+          <input type="checkbox" id="botsToggle" checked />
+          <span class="switchTrack"></span>
+        </label>
+      </div>
     </div>
 
     <div class="tabPanel" data-panel="howto">
@@ -213,9 +261,11 @@
         <div><b>SPACE</b> — jump (tap again in air to double jump)</div>
         <div><b>SHIFT</b> — sprint &nbsp; <b>C</b> — slide while sprinting</div>
         <div><b>Run at a wall + jump</b> — wall-run automatically, <b>SPACE</b> to wall-jump</div>
-        <div><b>RIGHT CLICK</b> (hold) — fire grappling hook, pulls you to the point</div>
-        <div><b>LEFT CLICK</b> — fire blaster</div>
-        <div><b>ESC</b> — pause</div>
+        <div><b>E</b> (hold) — fire grappling hook, pulls you to the point</div>
+        <div><b>LEFT CLICK</b> — fire weapon &nbsp; <b>RIGHT CLICK</b> (hold) — aim down sights</div>
+        <div><b>1-4</b> — switch weapon: blaster, SMG, deagle, sniper</div>
+        <div><b>TAB</b> (hold) — full arena roster &nbsp; <b>ESC</b> — pause</div>
+        <div>Get a kill to heal +25 HP. Taller towers make good sniper nests.</div>
       </div>
     </div>
   </div>
@@ -233,6 +283,16 @@
   <div id="centerReticleHint"></div>
   <div id="hitMarker"></div>
   <div id="damageFlash"></div>
+  <div id="scopeOverlay"><div class="reticle"></div></div>
+  <div id="weaponLabel">BLASTER</div>
+
+  <div id="tabList">
+    <div class="tabListPanel">
+      <h3>ARENA ROSTER</h3>
+      <div id="tabListHeader"><span>NAME</span><span>ROLE</span><span>SCORE</span></div>
+      <div id="tabListRows"></div>
+    </div>
+  </div>
 
   <div id="bottomLeft">
     <div class="barLabel"><span>HULL</span><span id="hpText">100</span></div>
@@ -357,9 +417,10 @@ addBlock(0, -7, -10.5,20.5, 15, 1, COL.pit, COL.pitEdge);
 // stepping platforms across the pit
 addBlock(-5.5, 1, -5.5, 4.5, 1, 4.5, COL.plat, COL.platEdge);
 addBlock(5.5, 1, 5.5, 4.5, 1, 4.5, COL.plat, COL.platEdge);
-// central tower
+// central tower (now a tall sniping perch)
 addBlock(0, 3, 0, 4.5, 1, 4.5, COL.tower, COL.towerEdge);
-addBlock(0, 8.5, 0, 2, 11, 2, COL.tower, COL.towerEdge);
+addBlock(0, 14.5, 0, 2, 23, 2, COL.tower, COL.towerEdge);
+addBlock(0, 26, 0, 3.2, 1, 3.2, COL.plat, COL.platEdge);
 
 // cover pillars
 const pillarPositions = [
@@ -368,9 +429,23 @@ const pillarPositions = [
 ];
 pillarPositions.forEach(p=> addBlock(p[0],p[1],p[2], 3,8,3, COL.cover, COL.coverEdge));
 
+// extra sniper-nest towers with platforms
+addBlock(15, 10, -15, 3, 20, 3, COL.tower, COL.towerEdge);
+addBlock(15, 20.5, -15, 4, 1, 4, COL.plat, COL.platEdge);
+addBlock(-15, 10, 15, 3, 20, 3, COL.tower, COL.towerEdge);
+addBlock(-15, 20.5, 15, 4, 1, 4, COL.plat, COL.platEdge);
+
 // raised corner platforms
 addBlock(30,6,-30, 8,1,8, COL.plat, COL.platEdge);
 addBlock(-30,6,30, 8,1,8, COL.plat, COL.platEdge);
+
+// extra scattered cover obstacles
+addBlock(12, 1.5, 4, 3, 3, 3, COL.cover, COL.coverEdge);
+addBlock(-12, 1.5, -4, 3, 3, 3, COL.cover, COL.coverEdge);
+addBlock(4, 1.5, -12, 3, 3, 3, COL.cover, COL.coverEdge);
+addBlock(-4, 1.5, 12, 3, 3, 3, COL.cover, COL.coverEdge);
+addBlock(0, 1.5, -20, 5, 3, 2, COL.cover, COL.coverEdge);
+addBlock(0, 1.5, 20, 5, 3, 2, COL.cover, COL.coverEdge);
 
 // thin grid floor accent lines for tron-ish ground detail
 const gridHelper = new THREE.GridHelper(80, 40, 0x1c3d55, 0x101a2c);
@@ -404,7 +479,17 @@ const PLAYER_RADIUS = 0.4, PLAYER_HEIGHT = 1.7, EYE_HEIGHT = 1.55;
 const GRAVITY = -32, WALK_SPEED = 8.5, SPRINT_SPEED = 13.5;
 const JUMP_VEL = 10.5, DOUBLE_JUMP_VEL = 9.5, WALLRUN_SPEED = 11;
 const GRAPPLE_ACCEL = 78, GRAPPLE_MAXSPEED = 44, GRAPPLE_MAX_RANGE = 60;
-const FIRE_COOLDOWN = 0.15, GRAPPLE_COOLDOWN = 0.35;
+const GRAPPLE_COOLDOWN = 0.35;
+const HEAL_ON_KILL = 25;
+
+const WEAPONS = [
+  { id:'blaster', name:'BLASTER', damage:26, headshotDamage:48, cooldown:0.15, spread:0.010, adsSpread:0.004, automatic:false, adsZoom:0.9,  moveMultAds:1,    recoil:0.09, kickPitch:0.014, restOffset:new THREE.Vector3(0,0,0) },
+  { id:'smg',     name:'SMG',     damage:14, headshotDamage:26, cooldown:0.09, spread:0.028, adsSpread:0.012, automatic:true,  adsZoom:0.85, moveMultAds:1,    recoil:0.05, kickPitch:0.008, restOffset:new THREE.Vector3(0,0.02,0.05) },
+  { id:'deagle',  name:'DEAGLE',  damage:34, headshotDamage:70, cooldown:0.32, spread:0.006, adsSpread:0.0015,automatic:false, adsZoom:0.8,  moveMultAds:1,    recoil:0.16, kickPitch:0.022, restOffset:new THREE.Vector3(0.02,-0.02,0.12) },
+  { id:'sniper',  name:'SNIPER',  damage:85, headshotDamage:150,cooldown:1.1,  spread:0.002, adsSpread:0,      automatic:false, adsZoom:0.16, moveMultAds:0.35, recoil:0.22, kickPitch:0.03, restOffset:new THREE.Vector3(-0.04,-0.05,-0.15) }
+];
+let currentWeaponIndex = 0;
+let mouseHeld = false, adsActive = false, adsBlend = 0;
 
 const feetPos = new THREE.Vector3(0,1,-35);
 const velocity = new THREE.Vector3(0,0,0);
@@ -426,6 +511,7 @@ let playerHP = 100, kills = 0, deaths = 0;
 let isDead = false, respawnTimer = 0;
 let started = false, paused = false;
 let mouseSensitivity = 1, masterVolume = 1;
+let botsEnabled = true;
 
 const playerSpawns = [
   new THREE.Vector3(0,1,-35), new THREE.Vector3(0,1,35),
@@ -435,9 +521,20 @@ const playerSpawns = [
 /* ============================================================
    INPUT
    ============================================================ */
+const WEAPON_KEYS = { Digit1:0, Digit2:1, Digit3:2, Digit4:3 };
 const keys = {};
-window.addEventListener('keydown', e=>{ keys[e.code]=true; if(e.code==='Escape'){ /* handled by pointerlockchange */ } });
-window.addEventListener('keyup', e=>{ keys[e.code]=false; });
+window.addEventListener('keydown', e=>{
+  keys[e.code]=true;
+  if(!started || paused) return;
+  if(e.code === 'KeyE' && !e.repeat) startGrapple();
+  if(e.code === 'Tab'){ e.preventDefault(); showTabList(true); }
+  if(e.code in WEAPON_KEYS) switchWeapon(WEAPON_KEYS[e.code]);
+});
+window.addEventListener('keyup', e=>{
+  keys[e.code]=false;
+  if(e.code === 'KeyE') endGrapple();
+  if(e.code === 'Tab') showTabList(false);
+});
 
 document.addEventListener('mousemove', e=>{
   if(document.pointerLockElement === renderer.domElement && started && !paused){
@@ -451,11 +548,12 @@ renderer.domElement.addEventListener('contextmenu', e=> e.preventDefault());
 
 renderer.domElement.addEventListener('mousedown', e=>{
   if(!started || paused) return;
-  if(e.button === 0) fireBlaster();
-  if(e.button === 2) startGrapple();
+  if(e.button === 0){ mouseHeld = true; fireWeapon(); }
+  if(e.button === 2) adsActive = true;
 });
 renderer.domElement.addEventListener('mouseup', e=>{
-  if(e.button === 2) endGrapple();
+  if(e.button === 0) mouseHeld = false;
+  if(e.button === 2) adsActive = false;
 });
 
 /* ============================================================
@@ -465,6 +563,12 @@ const menuEl = document.getElementById('menu');
 const pauseEl = document.getElementById('pauseMenu');
 const hudEl = document.getElementById('hud');
 const tipEl = document.getElementById('tip');
+const crosshairEl = document.getElementById('crosshair');
+const weaponLabelEl = document.getElementById('weaponLabel');
+const scopeOverlayEl = document.getElementById('scopeOverlay');
+const tabListEl = document.getElementById('tabList');
+const tabListRowsEl = document.getElementById('tabListRows');
+const botsToggle = document.getElementById('botsToggle');
 const nameInput = document.getElementById('nameInput');
 const onlineCountNum = document.getElementById('onlineCountNum');
 const sensSlider = document.getElementById('sensSlider');
@@ -504,6 +608,14 @@ volSlider.addEventListener('input', ()=>{
   localStorage.setItem('neonArenaVol', masterVolume);
 });
 
+// ----- bots toggle -----
+botsEnabled = localStorage.getItem('neonArenaBots') !== 'false';
+botsToggle.checked = botsEnabled;
+botsToggle.addEventListener('change', ()=>{
+  botsEnabled = botsToggle.checked;
+  localStorage.setItem('neonArenaBots', botsEnabled);
+});
+
 // ----- live online count -----
 async function pollOnlineCount(){
   try{
@@ -525,7 +637,8 @@ document.getElementById('playBtn').addEventListener('click', ()=>{
   initAudio();
   const name = (nameInput.value || 'PLAYER').trim().slice(0,16) || 'PLAYER';
   connectMultiplayer(name);
-  showTip('Hold RIGHT CLICK near a surface to grapple. Sprint into a wall + jump to wall-run.', 6000);
+  bots.forEach(b=>{ b.group.visible = botsEnabled && b.alive; });
+  showTip('Hold E near a surface to grapple. Hold RIGHT CLICK to aim. 1-4 to switch weapons.', 7000);
 });
 
 document.getElementById('resumeBtn').addEventListener('click', ()=>{
@@ -540,6 +653,10 @@ document.addEventListener('pointerlockchange', ()=>{
   } else {
     paused = true;
     pauseEl.style.display = 'flex';
+    mouseHeld = false;
+    adsActive = false;
+    endGrapple();
+    showTabList(false);
   }
 });
 
@@ -635,7 +752,8 @@ function updateTracers(dt){
    WEAPON MODEL BUILDER (shared by bots, remote players, and the
    local first-person viewmodel further down)
    ============================================================ */
-function buildGunModel(scale){
+function buildGunModel(type, scale){
+  type = type || 'blaster';
   scale = scale || 1;
   const g = new THREE.Group();
   const dark = 0x0d0d16;
@@ -648,26 +766,55 @@ function buildGunModel(scale){
     g.add(mesh);
     return mesh;
   }
+  function cyl(r,h,color,x,y,z){
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,8), new THREE.MeshBasicMaterial({ color }));
+    mesh.rotation.x = Math.PI/2;
+    mesh.position.set(x,y,z);
+    g.add(mesh);
+    return mesh;
+  }
 
-  part(0.11,0.11,0.55, dark, 0,0,0);              // body
-  part(0.06,0.06,0.42, 0x1a1a2a, 0,0.01,-0.42);    // barrel shroud
-
-  const barrel = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.022,0.022,0.32,8),
-    new THREE.MeshBasicMaterial({ color:0x0a0a12 })
-  );
-  barrel.rotation.x = Math.PI/2;
-  barrel.position.set(0,0.005,-0.62);
-  g.add(barrel);
-
-  part(0.09,0.2,0.09, dark, 0,-0.16,0.16);          // grip
-  part(0.14,0.05,0.22, 0x1a1a2a, 0,-0.09,0.32);      // mag
-
-  part(0.14,0.02,0.5, 0xff2bd6, 0,0.065,0);          // top accent stripe
-  part(0.02,0.06,0.06, 0x00fff2, 0,0.03,-0.63);       // front sight
+  if(type === 'smg'){
+    part(0.10,0.12,0.40, dark, 0,0,0);                    // body
+    part(0.06,0.06,0.22, 0x1a1a2a, 0,0.005,-0.30);         // shroud
+    cyl(0.018,0.20, 0x0a0a12, 0,0.005,-0.42);              // barrel
+    part(0.08,0.16,0.08, dark, 0,-0.14,0.08);              // grip
+    part(0.09,0.22,0.09, 0x1a1a2a, 0,-0.10,-0.04);         // curved mag
+    part(0.07,0.05,0.14, dark, 0,-0.02,0.26);              // foregrip
+    part(0.12,0.02,0.35, 0x39ff14, 0,0.062,-0.02);         // accent stripe
+  } else if(type === 'deagle'){
+    part(0.13,0.16,0.32, dark, 0,0,0.02);                  // slide/body
+    cyl(0.026,0.22, 0x0a0a12, 0,0.01,-0.24);               // barrel
+    part(0.10,0.20,0.09, dark, 0,-0.17,0.14);              // grip
+    part(0.12,0.05,0.12, 0x1a1a2a, 0,-0.10,0.16);          // mag base
+    part(0.15,0.02,0.30, 0xffcc00, 0,0.085,0.02);          // accent stripe
+  } else if(type === 'sniper'){
+    part(0.10,0.10,0.85, dark, 0,-0.01,-0.10);             // long body
+    cyl(0.020,0.50, 0x0a0a12, 0,0,-0.68);                  // long barrel
+    part(0.10,0.13,0.11, dark, 0,-0.17,0.22);              // grip
+    part(0.10,0.04,0.20, 0x1a1a2a, 0,-0.10,0.32);          // mag
+    part(0.09,0.09,0.28, 0x0a0a12, 0,0.11,-0.02);          // scope body
+    cyl(0.045,0.05, 0x0a0a12, 0,0.11,-0.17);               // scope lens ring
+    part(0.13,0.015,0.85, 0x8b5cf6, 0,0.07,-0.10);         // top accent stripe
+  } else { // blaster (default)
+    part(0.11,0.11,0.55, dark, 0,0,0);                     // body
+    part(0.06,0.06,0.42, 0x1a1a2a, 0,0.01,-0.42);          // barrel shroud
+    cyl(0.022,0.32, 0x0a0a12, 0,0.005,-0.62);              // barrel
+    part(0.09,0.2,0.09, dark, 0,-0.16,0.16);               // grip
+    part(0.14,0.05,0.22, 0x1a1a2a, 0,-0.09,0.32);          // mag
+    part(0.14,0.02,0.5, 0xff2bd6, 0,0.065,0);              // top accent stripe
+    part(0.02,0.06,0.06, 0x00fff2, 0,0.03,-0.63);          // front sight
+  }
 
   g.scale.setScalar(scale);
   return g;
+}
+
+function disposeGroup(group){
+  group.traverse(obj=>{
+    if(obj.geometry) obj.geometry.dispose();
+    if(obj.material) obj.material.dispose();
+  });
 }
 
 /* ============================================================
@@ -734,7 +881,7 @@ function makeHumanoidModel(colorHex){
   group.add(hpBg); group.add(hpFill);
 
   // held gun, floating near the body since the humanoid model has no arms
-  const heldGun = buildGunModel(0.85);
+  const heldGun = buildGunModel('blaster', 0.85);
   heldGun.position.set(0.36,1.0,0.22);
   heldGun.rotation.y = Math.PI * 0.1;
   group.add(heldGun);
@@ -796,6 +943,7 @@ function damageBot(bot, amount, headshot){
     bot.group.visible = false;
     bot.respawnTimer = 4.5;
     kills++;
+    playerHP = Math.min(100, playerHP + HEAL_ON_KILL);
     spawnParticles(bot.group.position.clone().add(new THREE.Vector3(0,1,0)), bot.colorHex, 18, 4, 0.6);
     sfx.botDeath();
     addKillFeedEntry('YOU ELIMINATED ' + bot.name, '#ffcc00');
@@ -950,6 +1098,29 @@ function updateRosterHUD(){
   ).join('');
 }
 
+function showTabList(show){
+  tabListEl.classList.toggle('show', show);
+  if(show) populateTabList();
+}
+
+function populateTabList(){
+  const rows = [{ name: localName + ' (YOU)', color:'#eafcff', role:'PLAYER', score:`${kills}/${deaths}`, sortKey:kills }];
+  remotePlayers.forEach(p=> rows.push({
+    name:p.name, color:'#'+new THREE.Color(p.colorHex).getHexString(), role:'PLAYER',
+    score:`${p.kills}/${p.deaths}`, sortKey:p.kills
+  }));
+  if(botsEnabled){
+    bots.forEach(b=> rows.push({
+      name:b.name, color:'#'+new THREE.Color(b.colorHex).getHexString(), role:'BOT',
+      score: b.alive ? Math.round(100*b.hp/b.maxHp) + '% HP' : 'DOWN', sortKey:-1
+    }));
+  }
+  rows.sort((a,b)=> b.sortKey - a.sortKey);
+  tabListRowsEl.innerHTML = rows.map(r=>
+    `<div class="tabListRow"><span style="color:${r.color}">${r.name}</span><span class="role">${r.role}</span><span>${r.score}</span></div>`
+  ).join('');
+}
+
 function connectMultiplayer(name){
   localName = name;
   if(typeof io === 'undefined') return; // socket.io client script failed to load; solo vs bots still works
@@ -1012,6 +1183,7 @@ function connectMultiplayer(name){
     if(d.victimId === socket.id) return; // local respawn message already added via respawnPlayer's cause text
     if(d.killerId === socket.id){
       kills++;
+      playerHP = Math.min(100, playerHP + HEAL_ON_KILL);
       addKillFeedEntry('YOU ELIMINATED ' + d.victimName, '#ffcc00');
     } else {
       addKillFeedEntry((d.killerName || 'THE VOID') + ' ELIMINATED ' + d.victimName, '#ff2bd6');
@@ -1081,18 +1253,32 @@ function moveAndCollide(delta){
 let fireCooldownTimer = 0;
 const shootRaycaster = new THREE.Raycaster();
 
-function fireBlaster(){
+function switchWeapon(index){
+  if(index < 0 || index >= WEAPONS.length || index === currentWeaponIndex && gunModel) return;
+  currentWeaponIndex = index;
+  const weapon = WEAPONS[index];
+  if(gunModel){ gunGroup.remove(gunModel); disposeGroup(gunModel); }
+  gunModel = buildGunModel(weapon.id, 1);
+  gunGroup.add(gunModel);
+  weaponLabelEl.textContent = weapon.name;
+}
+
+function fireWeapon(){
+  const weapon = WEAPONS[currentWeaponIndex];
   if(fireCooldownTimer > 0 || isDead) return;
-  fireCooldownTimer = FIRE_COOLDOWN;
-  recoilPitch += 0.03;
-  triggerGunRecoil();
+  fireCooldownTimer = weapon.cooldown;
+  recoilPitch += weapon.kickPitch;
+  triggerGunRecoil(weapon);
   triggerMuzzleFlash();
   sfx.shoot();
 
-  shootRaycaster.setFromCamera({x:0,y:0}, camera);
+  const spread = adsActive ? weapon.adsSpread : weapon.spread;
+  const ndcX = (Math.random()-0.5)*spread*2;
+  const ndcY = (Math.random()-0.5)*spread*2;
+  shootRaycaster.setFromCamera({x:ndcX, y:ndcY}, camera);
   const remoteTargets = Array.from(remotePlayers.values()).filter(p=>p.alive).flatMap(p=>[p.body,p.head]);
   const targets = solidMeshes
-    .concat(bots.filter(b=>b.alive).flatMap(b=>[b.body,b.head]))
+    .concat(botsEnabled ? bots.filter(b=>b.alive).flatMap(b=>[b.body,b.head]) : [])
     .concat(remoteTargets);
   const hits = shootRaycaster.intersectObjects(targets, false);
 
@@ -1108,12 +1294,12 @@ function fireBlaster(){
     const remoteRef = hit.object.userData.remoteRef;
     if(botRef){
       const headshot = !!hit.object.userData.isHead;
-      damageBot(botRef, headshot ? 48 : 26, headshot);
+      damageBot(botRef, headshot ? weapon.headshotDamage : weapon.damage, headshot);
       showHitMarker(headshot);
       sfx.hit();
     } else if(remoteRef){
       const headshot = !!hit.object.userData.isHead;
-      const dmg = headshot ? 48 : 26;
+      const dmg = headshot ? weapon.headshotDamage : weapon.damage;
       if(socket) socket.emit('shotHit', { targetId: remoteRef.id, damage: dmg, headshot });
       showHitMarker(headshot);
       sfx.hit();
@@ -1166,10 +1352,11 @@ const viewModelScene = new THREE.Scene();
 const viewModelCamera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth/window.innerHeight, 0.01, 10);
 
 const GUN_REST = new THREE.Vector3(0.32, -0.32, -0.55);
-const gunGroup = buildGunModel(1);
+const gunGroup = new THREE.Group();
 gunGroup.position.copy(GUN_REST);
 gunGroup.rotation.y = Math.PI * 0.06;
 viewModelScene.add(gunGroup);
+let gunModel = null;
 
 const muzzleFlash = new THREE.Sprite(new THREE.SpriteMaterial({
   color:0xbfffff, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
@@ -1180,12 +1367,14 @@ muzzleFlash.visible = false;
 gunGroup.add(muzzleFlash);
 let muzzleFlashLife = 0;
 
+switchWeapon(0);
+
 let gunRecoilOffset = 0, gunRecoilPitchKick = 0;
 let gunSwayYaw = 0, gunSwayPitch = 0, gunLastYaw = yaw, gunLastPitch = pitch;
 
-function triggerGunRecoil(){
-  gunRecoilOffset = Math.min(0.16, gunRecoilOffset + 0.09);
-  gunRecoilPitchKick = Math.min(0.22, gunRecoilPitchKick + 0.12);
+function triggerGunRecoil(weapon){
+  gunRecoilOffset = Math.min(0.22, gunRecoilOffset + weapon.recoil);
+  gunRecoilPitchKick = Math.min(0.3, gunRecoilPitchKick + weapon.recoil*1.3);
 }
 function triggerMuzzleFlash(){
   muzzleFlashLife = 0.05;
@@ -1193,10 +1382,19 @@ function triggerMuzzleFlash(){
 }
 
 function updateGunViewmodel(dt){
+  const weapon = WEAPONS[currentWeaponIndex];
+  const sniperScoped = adsActive && weapon.id === 'sniper';
+  gunGroup.visible = !sniperScoped;
+  if(scopeOverlayEl) scopeOverlayEl.classList.toggle('show', sniperScoped);
+  if(crosshairEl) crosshairEl.classList.toggle('hidden', sniperScoped);
+
+  adsBlend = THREE.MathUtils.lerp(adsBlend, (adsActive && !sniperScoped) ? 1 : 0, dt*10);
+
   const moving = grounded && Math.hypot(velocity.x, velocity.z) > 1;
   const bobT = gameTime*10;
-  const bobX = moving ? Math.sin(bobT)*0.015 : 0;
-  const bobY = moving ? Math.abs(Math.sin(bobT))*0.012 : 0;
+  const bobAmt = 1 - adsBlend*0.7;
+  const bobX = moving ? Math.sin(bobT)*0.015*bobAmt : 0;
+  const bobY = moving ? Math.abs(Math.sin(bobT))*0.012*bobAmt : 0;
 
   gunSwayYaw = THREE.MathUtils.lerp(gunSwayYaw, (yaw - gunLastYaw)*-6, dt*8);
   gunSwayPitch = THREE.MathUtils.lerp(gunSwayPitch, (pitch - gunLastPitch)*6, dt*8);
@@ -1205,12 +1403,18 @@ function updateGunViewmodel(dt){
   gunRecoilOffset = THREE.MathUtils.lerp(gunRecoilOffset, 0, dt*10);
   gunRecoilPitchKick = THREE.MathUtils.lerp(gunRecoilPitchKick, 0, dt*10);
 
+  const rest = weapon.restOffset;
+  const restX = GUN_REST.x + rest.x, restY = GUN_REST.y + rest.y, restZ = GUN_REST.z + rest.z;
+  const adsX = THREE.MathUtils.lerp(restX, -restX*0.15, adsBlend);
+  const adsY = THREE.MathUtils.lerp(restY, restY + 0.05, adsBlend);
+  const adsZ = THREE.MathUtils.lerp(restZ, restZ + 0.22, adsBlend);
+
   gunGroup.position.set(
-    GUN_REST.x + bobX + gunSwayYaw*0.05,
-    GUN_REST.y + bobY + gunSwayPitch*0.05,
-    GUN_REST.z + gunRecoilOffset
+    adsX + bobX + gunSwayYaw*0.05*(1-adsBlend),
+    adsY + bobY + gunSwayPitch*0.05*(1-adsBlend),
+    adsZ + gunRecoilOffset
   );
-  gunGroup.rotation.set(-gunRecoilPitchKick, Math.PI*0.06 + gunSwayYaw*0.4, gunSwayPitch*0.3);
+  gunGroup.rotation.set(-gunRecoilPitchKick, Math.PI*0.06*(1-adsBlend) + gunSwayYaw*0.4*(1-adsBlend), gunSwayPitch*0.3*(1-adsBlend));
 
   if(muzzleFlashLife > 0){
     muzzleFlashLife -= dt;
@@ -1311,6 +1515,7 @@ function updatePlayer(dt){
 
   fireCooldownTimer -= dt;
   if(grapple.cooldown > 0) grapple.cooldown -= dt;
+  if(mouseHeld && WEAPONS[currentWeaponIndex].automatic) fireWeapon();
 
   let ix=0, iz=0;
   if(keys['KeyW']) iz -= 1;
@@ -1329,6 +1534,7 @@ function updatePlayer(dt){
 
   const sprinting = keys['ShiftLeft'] || keys['ShiftRight'];
   let speed = sprinting ? SPRINT_SPEED : WALK_SPEED;
+  if(adsActive) speed *= WEAPONS[currentWeaponIndex].moveMultAds;
 
   // slide
   if((keys['KeyC'] || keys['ControlLeft']) && grounded && hasInput && !sliding && slideCooldown <= 0){
@@ -1469,7 +1675,8 @@ function updatePlayer(dt){
   camera.rotation.set(pitch + recoilPitch, yaw, camRoll, 'YXZ');
 
   const sprintFov = sprinting && hasInput && grounded ? 4 : 0;
-  camera.fov = THREE.MathUtils.lerp(camera.fov, BASE_FOV + sprintFov, dt*6);
+  const targetFov = adsActive ? BASE_FOV * WEAPONS[currentWeaponIndex].adsZoom : BASE_FOV + sprintFov;
+  camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, dt*(adsActive ? 10 : 6));
   camera.updateProjectionMatrix();
 }
 
@@ -1502,7 +1709,7 @@ function animate(){
   if(started && !paused){
     gameTime += dt;
     updatePlayer(dt);
-    updateBots(dt, gameTime);
+    if(botsEnabled) updateBots(dt, gameTime);
     updateRemotePlayers(dt);
     sendNetworkUpdate(dt);
     updateParticles(dt);
